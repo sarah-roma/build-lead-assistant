@@ -12,7 +12,6 @@ def test_init_uses_env_vars(monkeypatch):
     monkeypatch.setenv("MILVUS_TOKEN", "env_token")
 
     setup = MilvusSetup()
-
     assert setup.host == "env_host"
     assert setup.port == "19530"
     assert setup.uri == "env_uri"
@@ -105,7 +104,7 @@ def test_create_milvus_collection():
 
     # Check fields added to schema
     mock_schema.add_field.assert_any_call(field_name="id", datatype=DataType.INT64, is_primary=True)
-    mock_schema.add_field.assert_any_call(field_name="vector", datatype=DataType.FLOAT_VECTOR, dim=768)
+    mock_schema.add_field.assert_any_call(field_name="vector", datatype=DataType.FLOAT_VECTOR, dim=384)
     mock_schema.add_field.assert_any_call(field_name="text", datatype=DataType.VARCHAR, max_length=2000)
 
     # check indexes and collection creation
