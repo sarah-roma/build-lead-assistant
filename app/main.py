@@ -4,10 +4,10 @@ from typing import Optional, List
 import logging
 
 from utils.milvus_setup import MilvusSetup
-from utils.mural_authentication import AuthenticateMural
-from utils.mural_extraction import get_widget_text
-from utils.file_extraction import ExtractText
-from utils.ingestion_pipeline import IngestionPipeline
+from utils.ingestion.mural_authentication import AuthenticateMural
+from utils.ingestion.mural_extraction import get_widget_text
+from utils.ingestion.file_extraction import ExtractText
+from utils.ingestion.ingestion_pipeline import IngestionPipeline
 
 
 load_dotenv()

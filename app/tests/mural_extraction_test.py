@@ -1,10 +1,10 @@
 import pytest
 from unittest.mock import patch, MagicMock
-from utils.mural_extraction import list_mural_widgets, get_widget_text
+from utils.ingestion.mural_extraction import list_mural_widgets, get_widget_text
 
 @pytest.fixture
 def mock_request():
-    with patch("utils.mural_extraction.requests.request") as mock_request:
+    with patch("utils.ingestion.mural_extraction.requests.request") as mock_request:
         yield mock_request
 
 # Test widget extraction
@@ -40,7 +40,7 @@ def test_list_mural_widgets_error(mock_request):
 # Test text extraction
 @pytest.fixture
 def mock_list():
-    with patch("utils.mural_extraction.list_mural_widgets") as mock_list:
+    with patch("utils.ingestion.mural_extraction.list_mural_widgets") as mock_list:
         yield mock_list
 
 def test_get_widget_text_extracts_html(mock_list):

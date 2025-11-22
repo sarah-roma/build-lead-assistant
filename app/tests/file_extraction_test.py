@@ -3,7 +3,7 @@ import asyncio
 from unittest.mock import patch, MagicMock, AsyncMock
 from pathlib import Path
 
-from utils.file_extraction import ExtractText
+from utils.ingestion.file_extraction import ExtractText
 
 
 
@@ -14,7 +14,7 @@ def test_clean_text():
     assert cleaned == "Hello\nWorld\nTest"
 
 #  Test text extraction
-@patch("utils.file_extraction.DocumentConverter")
+@patch("utils.ingestion.file_extraction.DocumentConverter")
 def test_extract_any_format(mock_converter_cls, tmp_path):
     # Create fake docling converter
     mock_converter = MagicMock()
@@ -37,8 +37,8 @@ def test_extract_any_format(mock_converter_cls, tmp_path):
 
 #  Test async extract
 @pytest.mark.asyncio
-@patch("utils.file_extraction.run_in_threadpool")
-@patch("utils.file_extraction.DocumentConverter")
+@patch("utils.ingestion.file_extraction.run_in_threadpool")
+@patch("utils.ingestion.file_extraction.DocumentConverter")
 async def test_extract(mock_converter_cls, mock_run_threadpool, tmp_path):
     # Create fake upload file
     file_bytes = b"hello world"
@@ -68,7 +68,7 @@ async def test_extract(mock_converter_cls, mock_run_threadpool, tmp_path):
 
 #  Test file parsing success
 @pytest.mark.asyncio
-@patch("utils.file_extraction.ExtractText.extract")
+@patch("utils.ingestion.file_extraction.ExtractText.extract")
 async def test_file_parser_success(mock_extract):
     # mock ExtractText.extract to return text
     mock_extract.return_value = "parsed text"
@@ -87,7 +87,7 @@ async def test_file_parser_success(mock_extract):
 
 # Test file parsing with extraction error
 @pytest.mark.asyncio
-@patch("utils.file_extraction.ExtractText.extract")
+@patch("utils.ingestion.file_extraction.ExtractText.extract")
 async def test_file_parser_error(mock_extract):
     # Make extract() raise an exception
     mock_extract.side_effect = Exception("Boom!")
