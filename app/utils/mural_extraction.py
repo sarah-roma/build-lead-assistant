@@ -2,7 +2,6 @@ import requests
 import json
 from bs4 import BeautifulSoup
 
-# How do I test this?
 MURAL_URL = "https://app.mural.co/api/public/v1/murals/{mural_id}/widgets"
 
     

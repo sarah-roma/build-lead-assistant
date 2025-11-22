@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import patch, MagicMock
-from mural_authentication import AuthenticateMural, ServerHandler
+from utils.mural_authentication import AuthenticateMural, ServerHandler
 
 
 # Test ServerHandler
@@ -39,9 +39,9 @@ def test_missing_oauth_settings():
 
 
 # Test authenticate flow
-@patch("mural_authentication.webbrowser.open")
-@patch("mural_authentication.HTTPServer")
-@patch("mural_authentication.OAuth2Session")
+@patch("utils.mural_authentication.webbrowser.open")
+@patch("utils.mural_authentication.HTTPServer")
+@patch("utils.mural_authentication.OAuth2Session")
 def test_authenticate_success(mock_oauth, mock_http, mock_browser):
     mock_session = MagicMock()
     mock_session.authorization_url.return_value = ("http://auth", "state")

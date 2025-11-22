@@ -1,7 +1,7 @@
 import pytest
 from pymilvus import DataType
 from unittest.mock import patch, MagicMock
-from milvus_setup import MilvusSetup
+from utils.milvus_setup import MilvusSetup
 
 
 #  Test __init__
@@ -12,7 +12,6 @@ def test_init_uses_env_vars(monkeypatch):
     monkeypatch.setenv("MILVUS_TOKEN", "env_token")
 
     setup = MilvusSetup()
-
     assert setup.host == "env_host"
     assert setup.port == "19530"
     assert setup.uri == "env_uri"
@@ -21,7 +20,7 @@ def test_init_uses_env_vars(monkeypatch):
 
 #  Test get_milvus_client
 def test_get_milvus_client_success():
-    with patch("milvus_setup.MilvusClient") as MockClient:
+    with patch("utils.milvus_setup.MilvusClient") as MockClient:
         setup = MilvusSetup(uri="mock_uri", token="mock_token")
         client = setup.get_milvus_client()
 
@@ -43,7 +42,7 @@ def test_get_milvus_client_missing_token():
 
 #  Test connect_to_milvus
 def test_connect_to_milvus_success():
-    with patch("milvus_setup.connections.connect") as mock_connect:
+    with patch("utils.milvus_setup.connections.connect") as mock_connect:
         mock_connect.return_value = "connection_ok"
         setup = MilvusSetup(host="localhost", port="19530")
 
@@ -54,7 +53,7 @@ def test_connect_to_milvus_success():
 
 
 def test_connect_to_milvus_failure():
-    with patch("milvus_setup.connections.connect", side_effect=Exception("boom")):
+    with patch("utils.milvus_setup.connections.connect", side_effect=Exception("boom")):
         setup = MilvusSetup(host="localhost", port="19530")
 
         with pytest.raises(Exception):
@@ -64,9 +63,9 @@ def test_connect_to_milvus_failure():
 #  Test setup_milvus_db
 def test_setup_milvus_db_creates_new_db():
     with (
-        patch("milvus_setup.connections.connect") as mock_conn,
-        patch("milvus_setup.db.list_database", return_value=[]),
-        patch("milvus_setup.db.create_database") as mock_create,
+        patch("utils.milvus_setup.connections.connect") as mock_conn,
+        patch("utils.milvus_setup.db.list_database", return_value=[]),
+        patch("utils.milvus_setup.db.create_database") as mock_create,
     ):
         setup = MilvusSetup(host="localhost", port="19530")
         result = setup.setup_milvus_db()
@@ -77,9 +76,9 @@ def test_setup_milvus_db_creates_new_db():
 
 def test_setup_milvus_db_existing_db():
     with (
-        patch("milvus_setup.connections.connect"),
-        patch("milvus_setup.db.list_database", return_value=["prototype_db"]),
-        patch("milvus_setup.db.create_database") as mock_create,
+        patch("utils.milvus_setup.connections.connect"),
+        patch("utils.milvus_setup.db.list_database", return_value=["prototype_db"]),
+        patch("utils.milvus_setup.db.create_database") as mock_create,
     ):
         setup = MilvusSetup(host="localhost", port="19530")
 
@@ -105,7 +104,7 @@ def test_create_milvus_collection():
 
     # Check fields added to schema
     mock_schema.add_field.assert_any_call(field_name="id", datatype=DataType.INT64, is_primary=True)
-    mock_schema.add_field.assert_any_call(field_name="vector", datatype=DataType.FLOAT_VECTOR, dim=768)
+    mock_schema.add_field.assert_any_call(field_name="vector", datatype=DataType.FLOAT_VECTOR, dim=384)
     mock_schema.add_field.assert_any_call(field_name="text", datatype=DataType.VARCHAR, max_length=2000)
 
     # check indexes and collection creation

@@ -1,33 +1,31 @@
 from pymilvus import connections, db, MilvusClient, DataType
-from dotenv import load_dotenv
 import os
+import logging
 
+
+_SENTINEL = object()
 
 class MilvusSetup:
-    """
-     Set up and manage Milvus database and collections
-     """
-    def __init__(
-        self,
-        host: str | None = None,
-        port: str | None = None,
-        uri: str | None = None,
-        token: str | None = None,
-    ) -> None:
-        load_dotenv()
-        self.host = host or os.environ.get("MILVUS_HOST")
-        self.port = port or os.environ.get("MILVUS_PORT")
-        self.uri = uri or os.environ.get("MILVUS_URI")
-        self.token = token or os.environ.get("MILVUS_TOKEN")
+    """Milvus setup and connection management"""
+    # def __init__(self, host=None, port=None, uri=None, token=None):
+    #     self.host = host or os.environ.get("MILVUS_HOST")
+    #     self.port = port or os.environ.get("MILVUS_PORT")
+    #     self.uri = uri or os.environ.get("MILVUS_URI")
+    #     self.token = token or os.environ.get("MILVUS_TOKEN")
+
+    # Sentinal pattern to distinguish between None and not provided for unit testing
+    def __init__(self, host=_SENTINEL, port=_SENTINEL, uri=_SENTINEL, token=_SENTINEL):
+        self.host = os.environ.get("MILVUS_HOST") if host is _SENTINEL else host
+        self.port = os.environ.get("MILVUS_PORT") if port is _SENTINEL else port
+        self.uri  = os.environ.get("MILVUS_URI")  if uri  is _SENTINEL else uri
+        self.token = os.environ.get("MILVUS_TOKEN") if token is _SENTINEL else token
 
     def setup_milvus_db(self):
-        host = self.host
-        port = self.port
-        print(host, port)
-
         try:
-            connections.connect(host=host, port=port)
+            logging.info("Connecting to Milvus server...")
+            connections.connect(host=self.host, port=self.port)
         except Exception as e:
+            logging.exception("Failed to connect to Milvus server")
             raise Exception(f"Failed to connect to Milvus server: {e}")
         database_name = "prototype_db"
         existing_databases = db.list_database()
@@ -51,15 +49,14 @@ class MilvusSetup:
         return client
 
     def connect_to_milvus(self):
-        host = self.host
-        port = self.port
-        print(f"Connecting to Milvus at {host}:{port}")
 
+        logging.info(f"Connecting to Milvus at {self.host}:{self.port}")
         try:
-            conn = connections.connect(host=host, port=port)
+            conn = connections.connect(host=self.host, port=self.port)
             print(f"Connection object: {conn}")
             return conn
         except Exception as e:
+            logging.exception("Failed to connect to Milvus server")
             raise Exception(f"Failed to connect to Milvus server: {e}")
 
     def create_milvus_collection(self, client, collection_name: str):
@@ -68,7 +65,7 @@ class MilvusSetup:
             enable_dynamic_field=True,
         )
         schema.add_field(field_name="id", datatype=DataType.INT64, is_primary=True)
-        schema.add_field(field_name="vector", datatype=DataType.FLOAT_VECTOR, dim=768)
+        schema.add_field(field_name="vector", datatype=DataType.FLOAT_VECTOR, dim=384)
         schema.add_field(field_name="text", datatype=DataType.VARCHAR, max_length=2000)
         index_params = client.prepare_index_params()
         index_params.add_index(
