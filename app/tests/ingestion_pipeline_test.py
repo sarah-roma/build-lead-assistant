@@ -1,11 +1,11 @@
 from unittest.mock import patch, MagicMock
 
-from utils.ingestion_pipeline import IngestionPipeline
+from utils.ingestion.ingestion_pipeline import IngestionPipeline
 
 
 
 # Test chunk_text
-@patch("utils.ingestion_pipeline.RecursiveCharacterTextSplitter")
+@patch("utils.ingestion.ingestion_pipeline.RecursiveCharacterTextSplitter")
 def test_chunk_text(mock_splitter):
     # Mock the text splitter instance
     mock_instance = MagicMock()
@@ -20,7 +20,7 @@ def test_chunk_text(mock_splitter):
 
 
 # Test embed_chunks
-@patch("utils.ingestion_pipeline.SentenceTransformer")
+@patch("utils.ingestion.ingestion_pipeline.SentenceTransformer")
 def test_embed_chunks(mock_model_class):
     # Mock embedding model instance
     mock_model = MagicMock()
