@@ -4,7 +4,7 @@ import os
 llm = WatsonxLLM(
     model_id="meta-llama/llama-3-3-70b-instruct",
     url=os.environ.get("WATSONX_URL"),
-    apikey=os.environ.get("WATSONX_APIKEY"),
+    api_key=os.environ.get("WATSONX_APIKEY"),
     project_id=os.environ.get("WATSONX_PROJECT_ID"),
 )
 

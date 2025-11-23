@@ -8,6 +8,7 @@ from utils.ingestion.mural_authentication import AuthenticateMural
 from utils.ingestion.mural_extraction import get_widget_text
 from utils.ingestion.file_extraction import ExtractText
 from utils.ingestion.ingestion_pipeline import IngestionPipeline
+from utils.retrieval_pipeline import crag_retrieval_flow
 
 
 load_dotenv()
@@ -134,4 +135,15 @@ async def create_upload_file(
         }
 
     except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/Ask a Question/")
+async def ask_your_question(collection_name: str, question: str):
+    try:
+        milvus_client = milvus_setup.get_milvus_client()
+        response = crag_retrieval_flow(question, milvus_client, collection_name)
+        return {"response": response}
+    except Exception as e:
+        logging.exception("Error occurred while processing the question")
         raise HTTPException(status_code=500, detail=str(e))
