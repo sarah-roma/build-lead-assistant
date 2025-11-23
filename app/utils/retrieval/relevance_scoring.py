@@ -32,7 +32,7 @@ def is_relevant(document: str, question: str) -> str:
     answer = response.strip().lower()
     answer = re.sub(r"[^a-z]", "", answer)
     logging.info(f"Relevance Answer -> {answer}")
-    if answer == "yes":
+    if "yes" in answer:
         return "yes"
     return "no"
 
