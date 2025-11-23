@@ -1,5 +1,9 @@
+import logging
+
+
 def retrieve_information(query_vector, milvus_client, collection_name: str):
     if collection_name not in milvus_client.list_collections():
+        logging.error(f"Collection '{collection_name}' does not exist in Milvus.")
         return "Error: Collection does not exist."
 
     search_params = {
@@ -15,7 +19,7 @@ def retrieve_information(query_vector, milvus_client, collection_name: str):
         search_params=search_params,
         output_fields=["text"]
     )
-    print(f"[DEBUG] Milvus search results: {results}")
+    logging.debug(f"Milvus search results: {results}")
     retrieved_texts = [
         hit["entity"]["text"]
         for hit in results[0]
