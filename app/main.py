@@ -145,8 +145,8 @@ async def upload_url(
         url: str
     ):
     try:
-        url_text = extract_url_content(url)  # Extracts the text from the widgets
-        logging.info(f"Extracted text from mural '{url}': {url_text}")
+        url_text = await extract_url_content(url)  # Extracts the text from the widgets
+        logging.info(f"Extracted text from url '{url}': {url_text}")
         url_chunks = {}
         url_chunks_list = []
 
