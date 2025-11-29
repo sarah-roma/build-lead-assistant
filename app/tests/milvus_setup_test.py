@@ -70,14 +70,14 @@ def test_setup_milvus_db_creates_new_db():
         setup = MilvusSetup(host="localhost", port="19530")
         result = setup.setup_milvus_db()
         mock_conn.assert_called_once()
-        mock_create.assert_called_once_with("prototype_db")
+        mock_create.assert_called_once_with("build_lead_assistant_db_v1")
         assert result == mock_create.return_value
 
 
 def test_setup_milvus_db_existing_db():
     with (
         patch("utils.milvus_setup.connections.connect"),
-        patch("utils.milvus_setup.db.list_database", return_value=["prototype_db"]),
+        patch("utils.milvus_setup.db.list_database", return_value=["build_lead_assistant_db_v1"]),
         patch("utils.milvus_setup.db.create_database") as mock_create,
     ):
         setup = MilvusSetup(host="localhost", port="19530")

@@ -145,12 +145,12 @@ async def upload_url(
         url: str
     ):
     try:
-        url_text = await extract_url_content(url)  # Extracts the text from the widgets
+        url_text = await extract_url_content(url)  # Extracts the text from the url
         logging.info(f"Extracted text from url '{url}': {url_text}")
         url_chunks = {}
         url_chunks_list = []
 
-        for text in url_text:  # widget is a string
+        for text in url_text:  # URL is a string
             url_chunks_list.extend(IngestionPipeline.chunk_text(text))
 
         url_chunks[url] = url_chunks_list
@@ -172,7 +172,39 @@ async def upload_url(
     except Exception as e:
         logging.exception("Error occurred while uploading url content")
         raise HTTPException(status_code=500, detail=str(e))
-        
+
+
+@app.get("/Upload Text/")
+async def upload_url(
+        collection_name: str,
+        information: str
+    ):
+    try:
+        logging.info(f"Information entered into tool: {information}")
+        information_chunks = {}
+        information_chunks_list = []
+
+        information_chunks_list.extend(IngestionPipeline.chunk_text(information))
+
+        information_chunks[information] = information_chunks_list
+        file_embeddings: dict = IngestionPipeline.embed_chunks(information_chunks)  # Create embeddings from the chunks
+        payload = IngestionPipeline.create_milvus_payload(file_embeddings, information_chunks)  # Create Milvus payload
+
+        client = milvus_setup.get_milvus_client()  # Get the client object
+
+        if collection_name not in client.list_collections():
+            logging.error("Collection doesn't exist") # If the collection doesn't exist
+            return {"error": f"Collection '{collection_name}' does not exist. Please create it first."}
+
+        client.insert(collection_name, payload)
+        return {
+                    "message": f"Data successfully inserted into {collection_name}",
+                    "chunks": information_chunks,
+                    "embeddings": file_embeddings
+                }
+    except Exception as e:
+        logging.exception("Error occurred while uploading url content")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/Ask a Question/")
 async def ask_your_question(collection_name: str, question: str):

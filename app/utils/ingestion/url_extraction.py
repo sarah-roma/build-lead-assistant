@@ -20,28 +20,28 @@
 # Should I just be using bs4?
 
 
-# import requests
-# import logging
+import requests
+import logging
 
-# def extract_url_content(url: str):
-#     response = requests.get(url)
-#     logging.info(f"Fetching URL: {url} - Status Code: {response.status_code}")
-#     if response.status_code == 200:
-#         logging.info(f"text scraped from {url}: {response.text[:500]}")
-#         return response.text
-#     else:
-#         raise ValueError(f"Error fetching URL {url}: {response.status_code}")
+def extract_url_content(url: str):
+    response = requests.get(url)
+    logging.info(f"Fetching URL: {url} - Status Code: {response.status_code}")
+    if response.status_code == 200:
+        logging.info(f"text scraped from {url}: {response.text[:500]}")
+        return response.text
+    else:
+        raise ValueError(f"Error fetching URL {url}: {response.status_code}")
 
 
-from selenium import webdriver
-from bs4 import BeautifulSoup
+# from selenium import webdriver
+# from bs4 import BeautifulSoup
 
-def extract_url_content(url):
-    driver = webdriver.Safari()   # uses system Safari
-    driver.get(url)
+# def extract_url_content(url):
+#     driver = webdriver.Safari()   # uses system Safari
+#     driver.get(url)
 
-    print("Login in Safari using your passkey...")
-    input("Press ENTER when done...")
+#     print("Login in Safari using your passkey...")
+#     input("Press ENTER when done...") # this still doesn't work
 
-    html = driver.page_source
-    return html
+#     html = driver.page_source
+#     return html
