@@ -27,7 +27,7 @@ class MilvusSetup:
         except Exception as e:
             logging.exception("Failed to connect to Milvus server")
             raise Exception(f"Failed to connect to Milvus server: {e}")
-        database_name = "prototype_db"
+        database_name = "build_lead_assistant_db_v1"
         existing_databases = db.list_database()
         if database_name not in existing_databases:
             database = db.create_database(database_name)
@@ -60,6 +60,7 @@ class MilvusSetup:
             raise Exception(f"Failed to connect to Milvus server: {e}")
 
     def create_milvus_collection(self, client, collection_name: str):
+        # build_lead_knowledge
         schema = client.create_schema(
             auto_id=False,
             enable_dynamic_field=True,
