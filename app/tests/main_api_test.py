@@ -21,7 +21,7 @@ def test_create_collection(mock_create, mock_get_client):
     mock_get_client.return_value = MagicMock()
     mock_create.return_value = {"status": "ok"}
 
-    response = client.post("/Create Collection/?collection_name=test_collection")
+    response = client.post("/Create a Collection/?collection_name=test_collection")
     
     assert response.status_code == 200
     assert response.json()["message"] == "Collection 'test_collection' created successfully."
@@ -60,7 +60,7 @@ def test_upload_mural_widgets(
     mock_embed.return_value = {"mock": "embeddings"}
     mock_payload.return_value = {"payload": "data"}
 
-    response = client.get("/Upload Mural/?collection_name=existing_collection&mural_id=123")
+    response = client.get("/Upload a Mural Board/?collection_name=existing_collection&url=https://app.mural.co/t/x/m/x/123/")
 
     assert response.status_code == 200
     json = response.json()
@@ -81,7 +81,7 @@ def test_upload_mural_missing_collection(mock_widgets, mock_get_client):
 
     mock_widgets.return_value = ["test"]
 
-    response = client.get("/Upload Mural/?collection_name=missing&mural_id=1")
+    response = client.get("/Upload a Mural Board/?collection_name=missing&url=https://app.mural.co/t/x/m/x/1/")
 
     assert "error" in response.json()
     assert "does not exist" in response.json()["error"]
@@ -113,7 +113,7 @@ def test_file_upload(
     }
 
     response = client.post(
-        "/File Upload/?collection_name=existing_collection",
+        "/Upload Files/?collection_name=existing_collection",
         files=files
     )
 
@@ -136,7 +136,7 @@ def test_file_upload_missing_collection(mock_get_client, mock_file_parser):
 
     files = {"file": ("file.txt", b"Hey", "text/plain")}
 
-    response = client.post("/File Upload/?collection_name=missing_collection", files=files)
+    response = client.post("/Upload Files/?collection_name=missing_collection", files=files)
 
     assert "error" in response.json()
     assert "does not exist" in response.json()["error"]

@@ -5,7 +5,7 @@ import logging
 
 from utils.milvus_setup import MilvusSetup
 from utils.ingestion.mural_authentication import AuthenticateMural
-from utils.ingestion.mural_extraction import get_widget_text
+from utils.ingestion.mural_extraction import get_widget_text, extract_mural_id
 from utils.ingestion.file_extraction import ExtractText
 from utils.ingestion.ingestion_pipeline import IngestionPipeline
 from utils.retrieval_pipeline import crag_retrieval_flow
@@ -14,6 +14,17 @@ from utils.ingestion.url_extraction import extract_url_content
 
 load_dotenv()
 app = FastAPI()
+
+tags_metadata = [
+    {
+        "name": "info-ingestion",
+        "description": "Multiple ways to ingest information into knowledge repositories",
+    },
+    {
+        "name": "info-retrieval",
+        "description": "Ask questions and retrieve the information from various knowledge repositories"
+    },
+]
 
 milvus_setup = MilvusSetup()
 milvus_setup.connect_to_milvus()
@@ -26,7 +37,7 @@ logging.basicConfig(
 
 
 # Create Milvus collection
-@app.post("/Create Collection/")
+@app.post("/Create a Collection/", tags=["info-ingestion"])
 async def create_collection(collection_name: str):
     """ Endpoint to create a Milvus collection """
     try:
@@ -44,7 +55,7 @@ async def create_collection(collection_name: str):
 
 
 # Mural authentication
-@app.get("/Authenticate Mural/")
+@app.get("/Authenticate Mural/", tags=["info-ingestion"])
 def get_mural_token():
     token = getattr(app.state, "mural_token", None)
     if token:
@@ -59,16 +70,16 @@ def get_mural_token():
 
 
 # Uploading Mural widgets
-@app.get("/Upload Mural/")
+@app.get("/Upload a Mural Board/", tags=["info-ingestion"])
 async def get_widgets(
     collection_name: str,
-    mural_id: str, 
+    url: str, 
     auth_token: str = Depends(get_mural_token)
 ):
     """ Endpoint to get widgets from a Mural board and process their text content """
     try:
-        widget_text = get_widget_text(mural_id, auth_token)  # Extracts the text from the widgets
-        logging.info(f"Extracted text from mural '{mural_id}': {widget_text}")
+        widget_text = get_widget_text(url, auth_token)  # Extracts the text from the widgets
+        logging.info(f"Extracted text from mural '{url}': {widget_text}")
         mural_chunks = {}
         chunks_list = []
 
@@ -76,7 +87,7 @@ async def get_widgets(
             text = widget  # widget is a string
             chunks_list.extend(IngestionPipeline.chunk_text(text))
 
-        mural_chunks[mural_id] = chunks_list
+        mural_chunks[extract_mural_id(url)] = chunks_list
         file_embeddings: dict = IngestionPipeline.embed_chunks(mural_chunks)  # Create embeddings from the chunks
         payload = IngestionPipeline.create_milvus_payload(file_embeddings, mural_chunks)  # Create Milvus payload
 
@@ -98,7 +109,7 @@ async def get_widgets(
 
 
 # Uploading files
-@app.post("/File Upload/")
+@app.post("/Upload Files/", tags=["info-ingestion"])
 async def create_upload_file(
     collection_name: str,
     file: Optional[List[UploadFile]] = File(None)
@@ -139,7 +150,7 @@ async def create_upload_file(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.get("/Upload a URL/")
+@app.get("/Upload a URL/", tags=["info-ingestion"])
 async def upload_url(
         collection_name: str,
         url: str
@@ -174,7 +185,7 @@ async def upload_url(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.get("/Upload Text/")
+@app.get("/Upload Text/", tags=["info-ingestion"])
 async def upload_url(
         collection_name: str,
         information: str
@@ -206,7 +217,9 @@ async def upload_url(
         logging.exception("Error occurred while uploading url content")
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/Ask a Question/")
+
+
+@app.post("/Ask a Question/", tags=["info-retrieval"])
 async def ask_your_question(collection_name: str, question: str):
     try:
         milvus_client = milvus_setup.get_milvus_client()
