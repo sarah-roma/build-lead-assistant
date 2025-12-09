@@ -1,15 +1,30 @@
 import requests
 import json
 from bs4 import BeautifulSoup
+from urllib.parse import urlparse
+
 
 MURAL_URL = "https://app.mural.co/api/public/v1/murals/{mural_id}/widgets"
 
-    
-def list_mural_widgets(mural_id: str, auth_token: str):
+
+def extract_mural_id(url: str) -> str | None:
+    try:
+        path_parts = [p for p in urlparse(url).path.split("/") if p]
+        # Expected: ["t", "<team>", "m", "<team>", "<boardId>", ...]
+        team = path_parts[1]
+        board_id = path_parts[4]
+
+        return f"{team}.{board_id}"
+    except Exception:
+        return None
+
+
+def list_mural_widgets(url: str, auth_token: str):
     """ List widgets in a Mural board"""
-    url = MURAL_URL.format(mural_id=mural_id)
+    mural_id = extract_mural_id(url)
+    auth_url = MURAL_URL.format(mural_id=mural_id)
     headers = {"Authorization": f"Bearer {auth_token}"}
-    response = requests.request("GET", url, headers=headers, data={})
+    response = requests.request("GET", auth_url, headers=headers, data={})
 
     # Check error BEFORE parsing JSON
     if response.status_code != 200:
@@ -24,9 +39,9 @@ def list_mural_widgets(mural_id: str, auth_token: str):
 
 
 
-def get_widget_text(mural_id: str, auth_token: str):
+def get_widget_text(url: str, auth_token: str):
     """ Extract text from Mural widgets """
-    response_json = list_mural_widgets(mural_id, auth_token)
+    response_json = list_mural_widgets(url, auth_token)
     all_extracted_text = []
     
     if response_json and 'value' in response_json:

@@ -14,14 +14,19 @@ def test_list_mural_widgets_success(mock_request):
     mock_response.text = '{"value": [{"id": "1"}]}'
     mock_request.return_value = mock_response
 
-    result = list_mural_widgets("123", "fake-token")
+    result = list_mural_widgets(
+        "https://app.mural.co/t/team/m/team/123/",
+        "fake-token"
+    )
+
 
     mock_request.assert_called_once_with(
         "GET",
-        "https://app.mural.co/api/public/v1/murals/123/widgets",
+        "https://app.mural.co/api/public/v1/murals/team.123/widgets",
         headers={"Authorization": "Bearer fake-token"},
         data={}
     )
+
 
     assert result == {"value": [{"id": "1"}]}
 
