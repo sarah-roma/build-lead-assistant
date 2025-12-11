@@ -1,6 +1,6 @@
-from pydantic import BaseModel, Field, HttpUrl
+from pydantic import BaseModel, Field, HttpUrl, ValidationError
 from typing import Optional, List
-from fastapi import Form
+from fastapi import Form, HTTPException
 
 
 class Attendee(BaseModel):
@@ -50,9 +50,11 @@ def workshop_form_dependency(
                     company=attendee_companies[idx] if attendee_companies else None,
                 )
             )
-
-    return WorkshopIngestionInput(
-        workshop_date=workshop_date,
-        mural_url=mural_url,
-        attendees=attendees_list
-    )
+    try:
+        return WorkshopIngestionInput(
+            workshop_date=workshop_date,
+            mural_url=mural_url,
+            attendees=attendees_list
+        )
+    except ValidationError as e:
+        raise HTTPException(status_code=422, detail=e.errors())
