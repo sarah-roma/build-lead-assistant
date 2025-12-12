@@ -1,7 +1,8 @@
-from fastapi import FastAPI, HTTPException, Depends, File, UploadFile
+from fastapi import FastAPI, HTTPException, Depends, File, UploadFile, Query
 from dotenv import load_dotenv
-from typing import Optional, List
+from typing import Optional, List, Annotated
 import logging
+from enum import Enum
 
 from utils.milvus_setup import MilvusSetup
 from utils.ingestion.mural_authentication import AuthenticateMural
@@ -35,6 +36,33 @@ logging.basicConfig(
     level=logging.DEBUG,
     format="%(asctime)s - %(levelname)s - %(filename)s:%(lineno)d - %(message)s"
 )
+
+
+# functionality for milvus collection dropdown
+def create_dynamic_collection_enum():
+    client = milvus_setup.get_milvus_client()
+    collections = client.list_collections() or ["__no_collections__"]
+
+    # dict of {member_name: member_value}
+    namespace = {name: name for name in collections}
+
+    # Correct dynamic Enum creation
+    DynamicEnum = Enum(
+        "MilvusCollections",
+        namespace,
+        type=str  # ensures it's a str-backed enum
+    )
+    return DynamicEnum
+
+MilvusCollections = create_dynamic_collection_enum()
+
+
+@app.get("/View Collections")
+def pick_collection(
+    collection_name: Annotated[MilvusCollections, Query(...)]
+):
+    return {"selected": str(collection_name)}
+
 
 
 # Create Milvus collection
