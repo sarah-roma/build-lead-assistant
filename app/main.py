@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException, Depends, File, UploadFile, Query
+from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 from typing import Optional, List, Annotated
 import logging
@@ -16,6 +17,16 @@ from utils.ingestion.url_extraction import extract_url_content
 
 load_dotenv()
 app = FastAPI()
+
+# Allow React frontend
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],  # your React dev server
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 tags_metadata = [
     {
@@ -63,6 +74,11 @@ def pick_collection(
 ):
     return {"selected": str(collection_name)}
 
+@app.get("/List Collections/", tags=["info-ingestion"])
+def list_collections():
+    client = milvus_setup.get_milvus_client()
+    collections = client.list_collections() or []
+    return {"collections": collections}
 
 
 # Create Milvus collection
