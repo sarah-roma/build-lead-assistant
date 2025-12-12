@@ -1,12 +1,14 @@
-from fastapi import FastAPI, HTTPException, Depends, File, UploadFile
+from fastapi import FastAPI, HTTPException, Depends, File, UploadFile, Query
 from dotenv import load_dotenv
-from typing import Optional, List
+from typing import Optional, List, Annotated
 import logging
+from enum import Enum
 
 from utils.milvus_setup import MilvusSetup
 from utils.ingestion.mural_authentication import AuthenticateMural
 from utils.ingestion.mural_extraction import get_widget_text, extract_mural_id
 from utils.ingestion.file_extraction import ExtractText
+from models.workshop_context import WorkshopIngestionInput, workshop_form_dependency
 from utils.ingestion.ingestion_pipeline import IngestionPipeline
 from utils.retrieval_pipeline import crag_retrieval_flow
 from utils.ingestion.url_extraction import extract_url_content
@@ -34,6 +36,33 @@ logging.basicConfig(
     level=logging.DEBUG,
     format="%(asctime)s - %(levelname)s - %(filename)s:%(lineno)d - %(message)s"
 )
+
+
+# functionality for milvus collection dropdown
+def create_dynamic_collection_enum():
+    client = milvus_setup.get_milvus_client()
+    collections = client.list_collections() or ["__no_collections__"]
+
+    # dict of {member_name: member_value}
+    namespace = {name: name for name in collections}
+
+    # Correct dynamic Enum creation
+    DynamicEnum = Enum(
+        "MilvusCollections",
+        namespace,
+        type=str  # ensures it's a str-backed enum
+    )
+    return DynamicEnum
+
+MilvusCollections = create_dynamic_collection_enum()
+
+
+@app.get("/View Collections")
+def pick_collection(
+    collection_name: Annotated[MilvusCollections, Query(...)]
+):
+    return {"selected": str(collection_name)}
+
 
 
 # Create Milvus collection
@@ -186,7 +215,7 @@ async def upload_url(
 
 
 @app.get("/Upload Text/", tags=["info-ingestion"])
-async def upload_url(
+async def upload_text(
         collection_name: str,
         information: str
     ):
@@ -217,6 +246,80 @@ async def upload_url(
         logging.exception("Error occurred while uploading url content")
         raise HTTPException(status_code=500, detail=str(e))
 
+
+@app.post("/Upload Workshop Information/", tags=["info-ingestion"])
+async def upload_workshop_info(
+    collection_name: str,
+    user_input: WorkshopIngestionInput = Depends(workshop_form_dependency),
+    workshop_files: Optional[UploadFile] = File(
+        None,
+        description="Upload any workshop files (PDF, DOCX etc)"
+    )
+):
+    try:
+        contextual_sections = []
+
+        # 1. Workshop date
+        if user_input.workshop_date:
+            contextual_sections.append(
+                "Prompt: When was the workshop held?\n"
+                f"User Answer: {user_input.workshop_date}\n"
+            )
+
+        # 2. Attendees
+        if user_input.attendees:
+            for attendee in user_input.attendees:
+                attendee_text = (
+                    "Prompt: Who attended the workshop and what were their job title, team, and company?\n"
+                    f"User Answer: {attendee.name}, "
+                    f"Job Title: {attendee.job_title or 'N/A'}, "
+                    f"Team: {attendee.team or 'N/A'}, "
+                    f"Company: {attendee.company or 'N/A'}\n"
+                )
+                contextual_sections.append(attendee_text)
+
+        # 3. Mural URL
+        if user_input.mural_url:
+            contextual_sections.append(
+                "Prompt: Provide any Mural board links used during the workshop.\n"
+                f"User Answer: {user_input.mural_url}\n"
+            )
+
+        # 4. File Upload
+        file_text = None
+        if workshop_files:
+            file_contents = (await workshop_files.read()).decode("utf-8", errors="ignore")
+            contextual_sections.append(
+                f"Prompt: Uploaded file '{workshop_files.filename}' contents.\n"
+                f"User Answer:\n{file_contents}\n"
+            )
+
+        # Combine
+        contextual_text = "\n".join(contextual_sections)
+
+        # Pipeline call
+        chunks = IngestionPipeline.chunk_text(contextual_text)
+        chunk_map = {contextual_text: chunks}
+        embeddings = IngestionPipeline.embed_chunks(chunk_map)
+        payload = IngestionPipeline.create_milvus_payload(embeddings, chunk_map)
+
+        # Milvus
+        client = milvus_setup.get_milvus_client()
+
+        if collection_name not in client.list_collections():
+            return {"error": f"Collection '{collection_name}' does not exist. Please create it first."}
+
+        client.insert(collection_name, payload)
+
+        return {
+            "message": f"Workshop data successfully inserted into {collection_name}",
+            "combined_text": contextual_text,
+            "chunks": chunk_map,
+            "embeddings": embeddings
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.post("/Ask a Question/", tags=["info-retrieval"])

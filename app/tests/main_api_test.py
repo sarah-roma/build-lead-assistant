@@ -343,3 +343,159 @@ def test_upload_text_missing_collection(mock_get_client):
         "error": "Collection 'missing' does not exist. Please create it first."
     }
 
+# Test upload workshop with no file provided
+@patch("main.milvus_setup.get_milvus_client")
+@patch("main.IngestionPipeline.chunk_text")
+@patch("main.IngestionPipeline.embed_chunks")
+@patch("main.IngestionPipeline.create_milvus_payload")
+def test_upload_workshop_no_file(
+    mock_payload, mock_embed, mock_chunk, mock_get_client, mock_milvus_client
+):
+    mock_get_client.return_value = mock_milvus_client
+
+    mock_chunk.return_value = ["chunk1"]
+    mock_embed.return_value = {"chunk1": [0.1, 0.2]}
+    mock_payload.return_value = {"payload": "mock"}
+
+    response = client.post(
+        "/Upload Workshop Information/?collection_name=existing_collection",
+        data={
+            "workshop_date": "2025-12-11",
+            "mural_url": "https://mural.co/test",
+            "attendee_names": "Alice",
+            "attendee_job_titles": "Designer",
+            "attendee_teams": "UX",
+            "attendee_companies": "Meta",
+        }
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert "combined_text" in body
+    assert "Alice" in body["combined_text"]
+    assert "chunks" in body
+    assert "embeddings" in body
+    assert body["message"] == "Workshop data successfully inserted into existing_collection"
+
+
+# Test upload workshop with file upload
+@patch("main.milvus_setup.get_milvus_client")
+@patch("main.ExtractText.file_parser", new_callable=AsyncMock)
+@patch("main.IngestionPipeline.chunk_text")
+@patch("main.IngestionPipeline.embed_chunks")
+@patch("main.IngestionPipeline.create_milvus_payload")
+def test_upload_workshop_with_file(
+    mock_payload, mock_embed, mock_chunk, mock_file_parser, mock_get_client, mock_milvus_client
+):
+    mock_get_client.return_value = mock_milvus_client
+
+    mock_file_parser.return_value = {"testfile.txt": "Some workshop notes"}
+    mock_chunk.return_value = ["chunk1"]
+    mock_embed.return_value = {"chunk1": [0.1, 0.2]}
+    mock_payload.return_value = {"payload": "mock"}
+
+    response = client.post(
+        "/Upload Workshop Information/?collection_name=existing_collection",
+        data={
+            "workshop_date": "2025-12-11",
+            "attendee_names": "Bob"
+        },
+        files={
+            "workshop_files": ("testfile.txt", b"dummy content", "text/plain")
+        }
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert "dummy content" in body["combined_text"]
+    assert "Bob" in body["combined_text"]
+    assert body["message"] == "Workshop data successfully inserted into existing_collection"
+
+
+# Test multiple attendees
+@patch("main.milvus_setup.get_milvus_client")
+@patch("main.IngestionPipeline.chunk_text")
+@patch("main.IngestionPipeline.embed_chunks")
+@patch("main.IngestionPipeline.create_milvus_payload")
+def test_upload_workshop_multiple_attendees(
+    mock_payload, mock_embed, mock_chunk, mock_get_client, mock_milvus_client
+):
+    mock_get_client.return_value = mock_milvus_client
+
+    mock_chunk.return_value = ["chunk1"]
+    mock_embed.return_value = {"chunk1": [0.1, 0.2]}
+    mock_payload.return_value = {"payload": "mock"}
+
+    response = client.post(
+        "/Upload Workshop Information/?collection_name=existing_collection",
+        data={
+            "workshop_date": "2025-12-11",
+            "attendee_names": ["Alice", "Bob"],
+            "attendee_job_titles": ["Designer", "Engineer"],
+            "attendee_teams": ["UX", "Platform"],
+            "attendee_companies": ["Meta", "IBM"],
+        }
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert "Alice" in body["combined_text"]
+    assert "Bob" in body["combined_text"]
+
+
+# Test collection missing
+@patch("main.milvus_setup.get_milvus_client")
+def test_upload_workshop_missing_collection(mock_get_client):
+    mock_client = MagicMock()
+    mock_client.list_collections.return_value = []  # No collection found
+    mock_get_client.return_value = mock_client
+
+    response = client.post(
+        "/Upload Workshop Information/?collection_name=missing_collection",
+        data={"workshop_date": "2025-12-11"}
+    )
+
+    assert response.status_code == 200
+    assert "error" in response.json()
+    assert "does not exist" in response.json()["error"]
+
+
+# Test invalid URL (FastAPI validation)
+def test_upload_workshop_invalid_url():
+    response = client.post(
+        "/Upload Workshop Information/?collection_name=existing_collection",
+        data={
+            "workshop_date": "2025-12-11",
+            "mural_url": "not-a-url"
+        }
+    )
+    assert response.status_code == 422
+    detail = response.json()["detail"]
+    assert detail[0]["loc"][-1] == "mural_url"
+    assert detail[0]["type"] == "url_parsing"
+
+
+# Test minimal submission (only date + name)
+@patch("main.milvus_setup.get_milvus_client")
+@patch("main.IngestionPipeline.chunk_text")
+@patch("main.IngestionPipeline.embed_chunks")
+@patch("main.IngestionPipeline.create_milvus_payload")
+def test_upload_workshop_minimal(
+    mock_payload, mock_embed, mock_chunk, mock_get_client, mock_milvus_client
+):
+    mock_get_client.return_value = mock_milvus_client
+
+    mock_chunk.return_value = ["chunk1"]
+    mock_embed.return_value = {"chunk1": [0.1, 0.2]}
+    mock_payload.return_value = {"payload": "mock"}
+
+    response = client.post(
+        "/Upload Workshop Information/?collection_name=existing_collection",
+        data={
+            "workshop_date": "2025-12-11",
+            "attendee_names": "Alice"
+        }
+    )
+
+    assert response.status_code == 200
+    assert "Alice" in response.json()["combined_text"]
