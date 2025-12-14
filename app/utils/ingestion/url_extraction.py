@@ -20,18 +20,49 @@
 # Should I just be using bs4?
 
 
+
+# This is really interesting
+# I got this error: UploadURL failed: Error: {"detail":"Error fetching URL https://en.wikipedia.org/wiki/Border_Terrier: 403"}
+# because its a bare request without a user-agent header so wikipedia rejects it as it thinks its a bot
+# old code:
+
+
 import requests
 import logging
 
-def extract_url_content(url: str):
-    response = requests.get(url)
+# def extract_url_content(url: str):
+#     response = requests.get(url)
+#     logging.info(f"Fetching URL: {url} - Status Code: {response.status_code}")
+#     if response.status_code == 200:
+#         logging.info(f"text scraped from {url}: {response.text[:500]}")
+#         return response.text
+#     else:
+#         raise ValueError(f"Error fetching URL {url}: {response.status_code}")
+
+# new code:
+
+from bs4 import BeautifulSoup
+
+def extract_url_content(url: str) -> str:
+    headers = {
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/120.0.0.0 Safari/537.36"
+        )
+    }
+
+    response = requests.get(url, headers=headers, timeout=15)
     logging.info(f"Fetching URL: {url} - Status Code: {response.status_code}")
+
     if response.status_code == 200:
-        logging.info(f"text scraped from {url}: {response.text[:500]}")
+        logging.info(f"Text scraped from {url}: {response.text[:500]}")
         return response.text
     else:
-        raise ValueError(f"Error fetching URL {url}: {response.status_code}")
-
+        raise ValueError(
+            f"Error fetching URL {url}: {response.status_code}"
+        )
+# This will need cleaning up later to remove HTML tags but its fine for now
 
 # from selenium import webdriver
 # from bs4 import BeautifulSoup

@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Depends, File, UploadFile, Query
+from fastapi import FastAPI, HTTPException, Depends, File, UploadFile, Query, Form
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 from typing import Optional, List, Annotated
@@ -153,10 +153,15 @@ async def get_widgets(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-# Uploading files
+# # Uploading files
+# @app.post("/Upload Files/", tags=["info-ingestion"])
+# async def create_upload_file(
+#     collection_name: str,
+#     file: Optional[List[UploadFile]] = File(None)
+# ):
 @app.post("/Upload Files/", tags=["info-ingestion"])
 async def create_upload_file(
-    collection_name: str,
+    collection_name: str = Form(...),
     file: Optional[List[UploadFile]] = File(None)
 ):
     """ Endpoint to upload files and process their text content """
@@ -195,38 +200,36 @@ async def create_upload_file(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.get("/Upload a URL/", tags=["info-ingestion"])
+@app.post("/Upload a URL/", tags=["info-ingestion"])
 async def upload_url(
-        collection_name: str,
-        url: str
-    ):
+    collection_name: str = Form(...),
+    url: str = Form(...)
+):
     try:
-        url_text = await extract_url_content(url)  # Extracts the text from the url
-        logging.info(f"Extracted text from url '{url}': {url_text}")
-        url_chunks = {}
-        url_chunks_list = []
+        url_text = extract_url_content(url)
 
-        for text in url_text:  # URL is a string
-            url_chunks_list.extend(IngestionPipeline.chunk_text(text))
+        if not isinstance(url_text, str):
+            raise ValueError("extract_url_content must return a string")
 
-        url_chunks[url] = url_chunks_list
-        file_embeddings: dict = IngestionPipeline.embed_chunks(url_chunks)  # Create embeddings from the chunks
-        payload = IngestionPipeline.create_milvus_payload(file_embeddings, url_chunks)  # Create Milvus payload
+        chunks = IngestionPipeline.chunk_text(url_text)
 
-        client = milvus_setup.get_milvus_client()  # Get the client object
+        url_chunks = {url: chunks}
+        embeddings = IngestionPipeline.embed_chunks(url_chunks)
+        payload = IngestionPipeline.create_milvus_payload(embeddings, url_chunks)
+
+        client = milvus_setup.get_milvus_client()
 
         if collection_name not in client.list_collections():
-            logging.error("Collection doesn't exist") # If the collection doesn't exist
-            return {"error": f"Collection '{collection_name}' does not exist. Please create it first."}
+            return {"error": f"Collection '{collection_name}' does not exist."}
 
         client.insert(collection_name, payload)
+
         return {
-                    "message": f"Data successfully inserted into {collection_name}",
-                    "chunks": url_chunks,
-                    "embeddings": file_embeddings
-                }
+            "message": f"URL content inserted into {collection_name}",
+            "chunk_count": len(chunks),
+        }
+
     except Exception as e:
-        logging.exception("Error occurred while uploading url content")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -263,14 +266,21 @@ async def upload_text(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+# @app.post("/Upload Workshop Information/", tags=["info-ingestion"])
+# async def upload_workshop_info(
+#     collection_name: str,
+#     user_input: WorkshopIngestionInput = Depends(workshop_form_dependency),
+#     workshop_files: Optional[UploadFile] = File(
+#         None,
+#         description="Upload any workshop files (PDF, DOCX etc)"
+#     )
+# ):
+
 @app.post("/Upload Workshop Information/", tags=["info-ingestion"])
 async def upload_workshop_info(
-    collection_name: str,
+    collection_name: str = Form(...),
     user_input: WorkshopIngestionInput = Depends(workshop_form_dependency),
-    workshop_files: Optional[UploadFile] = File(
-        None,
-        description="Upload any workshop files (PDF, DOCX etc)"
-    )
+    workshop_files: Optional[UploadFile] = File(None),
 ):
     try:
         contextual_sections = []
@@ -301,14 +311,14 @@ async def upload_workshop_info(
                 f"User Answer: {user_input.mural_url}\n"
             )
 
-        # 4. File Upload
-        file_text = None
-        if workshop_files:
-            file_contents = (await workshop_files.read()).decode("utf-8", errors="ignore")
-            contextual_sections.append(
-                f"Prompt: Uploaded file '{workshop_files.filename}' contents.\n"
-                f"User Answer:\n{file_contents}\n"
-            )
+        # # 4. File Upload
+        # file_text = None
+        # if workshop_files:
+        #     file_contents = (await workshop_files.read()).decode("utf-8", errors="ignore")
+        #     contextual_sections.append(
+        #         f"Prompt: Uploaded file '{workshop_files.filename}' contents.\n"
+        #         f"User Answer:\n{file_contents}\n"
+        #     )
 
         # Combine
         contextual_text = "\n".join(contextual_sections)
