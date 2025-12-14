@@ -54,11 +54,18 @@ export default function UploadURL() {
     <div>
       <h2>Upload URL</h2>
       {/* Choose which collection to associate the URL with */}
-      <Select value={collectionName} onChange={(e) => setCollectionName(e.target.value)}>
+      <Select
+        id="collection-select"
+        labelText="Select a collection"
+        value={collectionName}
+        onChange={(e) => setCollectionName(e.target.value)}
+      >
         {collections.map((col, idx) => <SelectItem key={idx} value={col} text={col} />)}
       </Select>
       {/* URL input field */}
       <TextInput
+        id="url"
+        labelText="URL"
         type="text"
         placeholder="URL"
         value={url}

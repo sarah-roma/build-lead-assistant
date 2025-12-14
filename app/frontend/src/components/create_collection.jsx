@@ -32,6 +32,8 @@ export default function CreateCollection() {
       <h2>Create Collection</h2>
       {/* Input bound to `collectionName` with an onChange handler */}
       <TextInput
+        id="collection-name"
+        labelText="Collection Name"
         type="text"
         placeholder="Collection Name"
         value={collectionName}

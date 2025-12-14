@@ -45,11 +45,18 @@ export default function UploadText() {
     <div>
       <h2>Upload Text</h2>
       {/* Collection selector populated by `collections` */}
-      <Select value={collectionName} onChange={(e) => setCollectionName(e.target.value)}>
+      <Select
+        id="collection-select"
+        labelText="Select a collection"
+        value={collectionName}
+        onChange={(e) => setCollectionName(e.target.value)}
+      >
         {collections.map((col, idx) => <SelectItem key={idx} value={col} text={col} />)}
       </Select>
       {/* Text area to collect information to upload */}
       <TextArea
+        id="information"
+        labelText="Information"
         placeholder="Information"
         value={information}
         onChange={(e) => setInformation(e.target.value)}

@@ -40,11 +40,18 @@ export default function UploadMuralBoard() {
     <div>
       <h2>Upload Mural Board</h2>
       {/* Collection selector */}
-      <Select value={collectionName} onChange={(e) => setCollectionName(e.target.value)}>
+      <Select
+        id="collection-select"
+        labelText="Select a collection"
+        value={collectionName}
+        onChange={(e) => setCollectionName(e.target.value)}
+      >
         {collections.map((col, idx) => <SelectItem key={idx} value={col} text={col} />)}
       </Select>
       {/* URL input for MURAL board */}
       <TextInput
+        id="mural-url"
+        labelText="Mural Board URL"
         type="text"
         placeholder="Mural Board URL"
         value={url}

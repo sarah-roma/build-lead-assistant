@@ -86,16 +86,105 @@
 
 // // Export the App component as the default export for the bundle entry point.
 // export default App;
+// import { useState } from "react";
+// import "carbon-components/css/carbon-components.min.css";
+// import "./index.css";
+
+// import {
+//   SideNav,
+//   SideNavItems,
+//   SideNavLink,
+//   HeaderName,
+//   Content
+// } from "carbon-components-react";
+
+// import CreateCollection from "./components/create_collection";
+// import UploadText from "./components/upload_text";
+// import UploadURL from "./components/upload_url";
+// import UploadMuralBoard from "./components/upload_mural_board";
+// import UploadWorkshop from "./components/upload_workshop";
+// import UploadFiles from "./components/upload_files";
+// import AskQuestion from "./components/ask_question";
+
+// function App() {
+//   const [activeTab, setActiveTab] = useState("createCollection");
+
+//   const tabs = [
+//     { id: "createCollection", label: "Create Collection" },
+//     { id: "uploadText", label: "Upload Text" },
+//     { id: "uploadURL", label: "Upload URL" },
+//     { id: "uploadMural", label: "Upload Mural Board" },
+//     { id: "uploadWorkshop", label: "Upload Workshop" },
+//     { id: "uploadFiles", label: "Upload Files" },
+//     { id: "askQuestion", label: "Ask a Question" },
+//   ];
+
+//   return (
+//     <div style={{ display: "flex", height: "100vh" }}>
+//       {/* Sidebar */}
+//       <SideNav
+//         expanded
+//         isFixedNav
+//         aria-label="Side navigation"
+//         style={{ height: "100vh" }}
+//       >
+//         <HeaderName href="#" prefix="My">
+//           Dashboard
+//         </HeaderName>
+//         <SideNavItems>
+//           {tabs.map((tab) => (
+//             <SideNavLink
+//               key={tab.id}
+//               href="#"
+//               isActive={activeTab === tab.id}
+//               onClick={() => setActiveTab(tab.id)}
+//             >
+//               {tab.label}
+//             </SideNavLink>
+//           ))}
+//         </SideNavItems>
+//         <div style={{ fontSize: "0.85rem", color: "#888", padding: "1rem" }}>
+//           &copy; {new Date().getFullYear()} Your App
+//         </div>
+//       </SideNav>
+
+//       {/* Main content */}
+//       <Content
+//         style={{
+//           flex: 1,
+//           overflowY: "auto",
+//           padding: "2rem",
+//           display: "flex",
+//           justifyContent: "center",
+//         }}
+//       >
+//         <div style={{ width: "100%", maxWidth: "900px" }}>
+//           {activeTab === "createCollection" && <CreateCollection />}
+//           {activeTab === "uploadText" && <UploadText />}
+//           {activeTab === "uploadURL" && <UploadURL />}
+//           {activeTab === "uploadMural" && <UploadMuralBoard />}
+//           {activeTab === "uploadWorkshop" && <UploadWorkshop />}
+//           {activeTab === "uploadFiles" && <UploadFiles />}
+//           {activeTab === "askQuestion" && <AskQuestion />}
+//         </div>
+//       </Content>
+//     </div>
+//   );
+// }
+
+// export default App;
+
+
 import { useState } from "react";
 import "carbon-components/css/carbon-components.min.css";
-import "./index.css";
 
 import {
+  Header,
+  HeaderName,
   SideNav,
   SideNavItems,
   SideNavLink,
-  HeaderName,
-  Content
+  Content,
 } from "carbon-components-react";
 
 import CreateCollection from "./components/create_collection";
@@ -105,6 +194,8 @@ import UploadMuralBoard from "./components/upload_mural_board";
 import UploadWorkshop from "./components/upload_workshop";
 import UploadFiles from "./components/upload_files";
 import AskQuestion from "./components/ask_question";
+
+const SIDE_NAV_WIDTH = 256;
 
 function App() {
   const [activeTab, setActiveTab] = useState("createCollection");
@@ -120,45 +211,50 @@ function App() {
   ];
 
   return (
-    <div style={{ display: "flex", height: "100vh" }}>
-      {/* Sidebar */}
-      <SideNav
-        expanded
-        isFixedNav
-        aria-label="Side navigation"
-        style={{ height: "100vh" }}
-      >
+    <>
+      {/* Header */}
+      <Header aria-label="My Dashboard">
         <HeaderName href="#" prefix="My">
           Dashboard
         </HeaderName>
+      </Header>
+
+      {/* Fixed SideNav */}
+      <SideNav
+        aria-label="Side navigation"
+        isFixedNav
+        expanded
+        style={{
+          top: "3rem", // header height
+          height: "calc(100vh - 3rem)",
+        }}
+      >
         <SideNavItems>
           {tabs.map((tab) => (
             <SideNavLink
               key={tab.id}
               href="#"
               isActive={activeTab === tab.id}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={(e) => {
+                e.preventDefault();
+                setActiveTab(tab.id);
+              }}
             >
               {tab.label}
             </SideNavLink>
           ))}
         </SideNavItems>
-        <div style={{ fontSize: "0.85rem", color: "#888", padding: "1rem" }}>
-          &copy; {new Date().getFullYear()} Your App
-        </div>
       </SideNav>
 
-      {/* Main content */}
-      <Content
+      {/* Main content area */}
+      <main
         style={{
-          flex: 1,
-          overflowY: "auto",
+          marginLeft: SIDE_NAV_WIDTH,
+          marginTop: "3rem",
           padding: "2rem",
-          display: "flex",
-          justifyContent: "center",
         }}
       >
-        <div style={{ width: "100%", maxWidth: "900px" }}>
+        <Content>
           {activeTab === "createCollection" && <CreateCollection />}
           {activeTab === "uploadText" && <UploadText />}
           {activeTab === "uploadURL" && <UploadURL />}
@@ -166,9 +262,9 @@ function App() {
           {activeTab === "uploadWorkshop" && <UploadWorkshop />}
           {activeTab === "uploadFiles" && <UploadFiles />}
           {activeTab === "askQuestion" && <AskQuestion />}
-        </div>
-      </Content>
-    </div>
+        </Content>
+      </main>
+    </>
   );
 }
 

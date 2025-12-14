@@ -46,7 +46,12 @@ export default function UploadFiles() {
   return (
     <div>
       <h2>Upload Files</h2>
-      <Select value={collectionName} onChange={(e) => setCollectionName(e.target.value)}>
+      <Select
+        id="collection-select"
+        labelText="Select a collection"
+        value={collectionName}
+        onChange={(e) => setCollectionName(e.target.value)}
+      >
         {collections.map((col, idx) => <SelectItem key={idx} value={col} text={col} />)}
       </Select>
       {/* Native file input, allows multiple selection */}
