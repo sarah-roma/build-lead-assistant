@@ -15,7 +15,7 @@ def test_extract_url_content_success(mock_get):
     result = extract_url_content("https://example.com")
 
     assert result == "Hello world"
-    mock_get.assert_called_once_with("https://example.com")
+    mock_get.assert_called_once_with('https://example.com', headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}, timeout=15)
 
 
 # Test URL extraction with non-200 status code
@@ -52,4 +52,4 @@ def test_extract_url_content_empty_url(mock_get):
     with pytest.raises(requests.exceptions.RequestException):
         extract_url_content("")
 
-    mock_get.assert_called_once_with("")
+    mock_get.assert_called_once_with('', headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}, timeout=15)
