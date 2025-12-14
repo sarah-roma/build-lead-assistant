@@ -17,8 +17,13 @@ body, html {
   display: flex;
 }
 
+.bx--content {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
 /* --- Sidebar --- */
-.sidebar {
+/* .sidebar {
   width: 240px;
   background-color: #ffffff;
   padding: 2rem 1rem;
@@ -26,9 +31,9 @@ body, html {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-}
+} */
 
-.sidebar h2 {
+/* .sidebar h2 {
   font-size: 1.5rem;
   margin-bottom: 2rem;
   color: #111;
@@ -40,9 +45,9 @@ body, html {
 
 .sidebar li {
   margin-bottom: 1rem;
-}
+} */
 
-.sidebar button {
+/* .sidebar button {
   width: 100%;
   text-align: left;
   padding: 0.75rem 1rem;
@@ -54,9 +59,9 @@ body, html {
   cursor: pointer;
   transition: all 0.2s ease;
   user-select: none;
-}
+} */
 
-.sidebar button.active {
+/* .sidebar button.active {
   background-color: #0f62fe;
   color: #fff;
   font-weight: bold;
@@ -69,20 +74,20 @@ body, html {
 .sidebar button:focus {
   outline: none;
   box-shadow: 0 0 0 2px #0f62fe;
-}
+} */
 
 /* --- Main content --- */
-.main-content {
+/* .main-content {
   flex: 1;
   padding: 2rem;
   overflow-y: auto;
-  background-color: #f0f2f5;
   display: flex;
   justify-content: center;
   align-items: flex-start;
-}
+  background-color: #f0f2f5;
+} */
 
-.main-panel {
+/* .main-panel {
   width: 100%;
   max-width: 900px;
   background-color: #ffffff;
@@ -92,4 +97,4 @@ body, html {
   display: flex;
   flex-direction: column;
   gap: 2rem;
-}
+} */

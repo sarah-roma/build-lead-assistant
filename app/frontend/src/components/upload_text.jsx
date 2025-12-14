@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { fetchCollections } from "../utils";
+import { TextArea, Button, Select, SelectItem, InlineNotification } from "carbon-components-react";
 // I ran a linter! I then fixed the err response handling as the variable wasnt being used
 // this can definitely be used for evidence
 
@@ -44,20 +45,24 @@ export default function UploadText() {
     <div>
       <h2>Upload Text</h2>
       {/* Collection selector populated by `collections` */}
-      <select value={collectionName} onChange={(e) => setCollectionName(e.target.value)}>
-        {collections.map((col, idx) => <option key={idx} value={col}>{col}</option>)}
-      </select>
+      <Select value={collectionName} onChange={(e) => setCollectionName(e.target.value)}>
+        {collections.map((col, idx) => <SelectItem key={idx} value={col} text={col} />)}
+      </Select>
       {/* Text area to collect information to upload */}
-      <textarea
+      <TextArea
         placeholder="Information"
         value={information}
         onChange={(e) => setInformation(e.target.value)}
         rows={4}
         cols={50}
       />
-      <button onClick={uploadText}>Upload</button>
+      <Button onClick={uploadText}>Upload</Button>
       {/* Response and debug output shown nicely */}
-      <pre>{message}</pre>
+      {message && <InlineNotification
+        kind="info"
+        title="Response"
+        subtitle={message}
+      />}
     </div>
   );
 }

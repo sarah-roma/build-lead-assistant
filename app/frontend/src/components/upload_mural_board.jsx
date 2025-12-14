@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { fetchCollections } from "../utils";
+import { TextInput, Button, Select, SelectItem, InlineNotification } from "carbon-components-react";
 
 
 export default function UploadMuralBoard() {
@@ -39,18 +40,18 @@ export default function UploadMuralBoard() {
     <div>
       <h2>Upload Mural Board</h2>
       {/* Collection selector */}
-      <select value={collectionName} onChange={(e) => setCollectionName(e.target.value)}>
-        {collections.map((col, idx) => <option key={idx} value={col}>{col}</option>)}
-      </select>
+      <Select value={collectionName} onChange={(e) => setCollectionName(e.target.value)}>
+        {collections.map((col, idx) => <SelectItem key={idx} value={col} text={col} />)}
+      </Select>
       {/* URL input for MURAL board */}
-      <input
+      <TextInput
         type="text"
         placeholder="Mural Board URL"
         value={url}
         onChange={(e) => setUrl(e.target.value)}
       />
-      <button onClick={uploadMural}>Upload</button>
-      <pre>{message}</pre>
+      <Button onClick={uploadMural}>Upload</Button>
+      {message && <InlineNotification kind="info" title="Response" subtitle={message} />}
     </div>
   );
 }

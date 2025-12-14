@@ -1,17 +1,22 @@
 import { useState, useEffect } from "react";
 import { fetchCollections } from "../utils";
 
+// Carbon components
+import {
+  Button,
+  TextInput,
+  Select,
+  SelectItem,
+  InlineNotification,
+} from "carbon-components-react";
 
 export default function AskQuestion() {
   const [collections, setCollections] = useState([]);
   const [collectionName, setCollectionName] = useState("");
-  // The question text to send to the backend
   const [question, setQuestion] = useState("");
-  // The response from the server (rendered as JSON for development)
   const [response, setResponse] = useState("");
-  const [setMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
 
-  // Load collections once and pick the first by default
   useEffect(() => {
     const loadCollections = async () => {
       const cols = await fetchCollections();
@@ -21,40 +26,66 @@ export default function AskQuestion() {
     loadCollections();
   }, []);
 
-  // Submit the question to the backend and display the result. If no
-  // collection is selected, show a friendly prompt.
   const askQuestion = async () => {
-    if (!collectionName) return setResponse("Select a collection");
+    if (!collectionName) return setErrorMessage("Select a collection");
     try {
       const res = await fetch(
-        `http://localhost:8000/Ask a Question/?collection_name=${encodeURIComponent(collectionName)}&question=${encodeURIComponent(question)}`,
+        `http://localhost:8000/Ask a Question/?collection_name=${encodeURIComponent(
+          collectionName
+        )}&question=${encodeURIComponent(question)}`,
         { method: "POST" }
       );
       const data = await res.json();
       setResponse(JSON.stringify(data, null, 2));
+      setErrorMessage("");
     } catch (err) {
-        console.error("AskQuestion failed:", err);
-        setMessage("Network error");
+      console.error("AskQuestion failed:", err);
+      setErrorMessage("Network error");
     }
   };
 
   return (
     <div>
       <h2>Ask a Question</h2>
-      {/* Select which collection to ask the question against */}
-      <select value={collectionName} onChange={(e) => setCollectionName(e.target.value)}>
-        {collections.map((col, idx) => <option key={idx} value={col}>{col}</option>)}
-      </select>
-      {/* The user's question */}
-      <input
-        type="text"
-        placeholder="Question"
+
+      <Select
+        id="collection-select"
+        labelText="Select Collection"
+        value={collectionName}
+        onChange={(e) => setCollectionName(e.target.value)}
+      >
+        {collections.map((col, idx) => (
+          <SelectItem key={idx} text={col} value={col} />
+        ))}
+      </Select>
+
+      <TextInput
+        id="question-input"
+        labelText="Your Question"
+        placeholder="Type your question"
         value={question}
         onChange={(e) => setQuestion(e.target.value)}
       />
-      <button onClick={askQuestion}>Submit</button>
-      {/* Server-generated response shown for debugging/review */}
-      <pre>{response}</pre>
+
+      <Button onClick={askQuestion} kind="primary">
+        Submit
+      </Button>
+
+      {errorMessage && (
+        <InlineNotification
+          kind="error"
+          title="Error"
+          subtitle={errorMessage}
+          lowContrast
+        />
+      )}
+
+      {response && (
+        <div style={{ marginTop: "1rem" }}>
+          <h4>Response:</h4>
+          <pre>{response}</pre>
+        </div>
+      )}
     </div>
   );
 }
