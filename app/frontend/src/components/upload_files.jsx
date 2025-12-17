@@ -1,19 +1,6 @@
 import { useState, useEffect } from "react";
 import { fetchCollections } from "../utils";
-// This isnt working in the react frontend its saying the
-// {
-//   "detail": [
-//     {
-//       "type": "missing",
-//       "loc": [
-//         "query",
-//         "collection_name"
-//       ],
-//       "msg": "Field required",
-//       "input": null
-//     }
-//   ]
-// }
+import { Button, FileUploader, Select, SelectItem, InlineNotification } from "carbon-components-react";
 
 export default function UploadFiles() {
   const [collections, setCollections] = useState([]);
@@ -59,13 +46,24 @@ export default function UploadFiles() {
   return (
     <div>
       <h2>Upload Files</h2>
-      <select value={collectionName} onChange={(e) => setCollectionName(e.target.value)}>
-        {collections.map((col, idx) => <option key={idx} value={col}>{col}</option>)}
-      </select>
+      <Select
+        id="collection-select"
+        labelText="Select a collection"
+        value={collectionName}
+        onChange={(e) => setCollectionName(e.target.value)}
+      >
+        {collections.map((col, idx) => <SelectItem key={idx} value={col} text={col} />)}
+      </Select>
       {/* Native file input, allows multiple selection */}
-      <input type="file" multiple onChange={handleFileChange} />
-      <button onClick={uploadFiles}>Upload</button>
-      <pre>{message}</pre>
+      <FileUploader
+        accept={[".pdf", ".txt", ".docx"]}
+        buttonLabel="Add Files"
+        labelDescription="Drag and drop files here or click to upload"
+        onChange={(event) => setFiles(Array.from(event.target.files))}
+        multiple
+      />
+      <Button onClick={uploadFiles}>Upload</Button>
+      {message && <InlineNotification kind="info" title="Response" subtitle={message} />}
     </div>
   );
 }

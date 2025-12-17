@@ -17,7 +17,7 @@ describe('AskQuestion', () => {
 
     await waitFor(() => expect(screen.getByDisplayValue('qaCol')).toBeInTheDocument());
 
-    fireEvent.change(screen.getByPlaceholderText('Question'), { target: { value: 'Is it working?' } });
+    fireEvent.change(screen.getByLabelText('Your Question'), { target: { value: 'Is it working?' } });
     fireEvent.click(screen.getByText('Submit'));
 
     await waitFor(() => expect(screen.getByText(/"answer": "Yes"/)).toBeInTheDocument());

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { TextInput, Button, InlineNotification } from "carbon-components-react";
 
 
 export default function CreateCollection() {
@@ -30,16 +31,22 @@ export default function CreateCollection() {
     <div>
       <h2>Create Collection</h2>
       {/* Input bound to `collectionName` with an onChange handler */}
-      <input
+      <TextInput
+        id="collection-name"
+        labelText="Collection Name"
         type="text"
         placeholder="Collection Name"
         value={collectionName}
         onChange={(e) => setCollectionName(e.target.value)}
       />
       {/* Trigger collection creation when clicked */}
-      <button onClick={createCollection}>Create</button>
+      <Button onClick={createCollection}>Create</Button>
       {/* Message area for validation/server responses */}
-      <p>{message}</p>
+        {message && <InlineNotification
+        kind="info"
+        title="Message"
+        subtitle={message}
+      />}
     </div>
   );
 }

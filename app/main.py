@@ -68,11 +68,11 @@ def create_dynamic_collection_enum():
 MilvusCollections = create_dynamic_collection_enum()
 
 
-@app.get("/View Collections")
-def pick_collection(
-    collection_name: Annotated[MilvusCollections, Query(...)]
-):
-    return {"selected": str(collection_name)}
+# @app.get("/View Collections")
+# def pick_collection(
+#     collection_name: Annotated[MilvusCollections, Query(...)]
+# ):
+#     return {"selected": str(collection_name)}
 
 @app.get("/List Collections/", tags=["info-ingestion"])
 def list_collections():
@@ -276,7 +276,7 @@ async def upload_text(
 #     )
 # ):
 
-@app.post("/Upload Workshop Information/", tags=["info-ingestion"])
+@app.post("/Upload Workshop Information/", include_in_schema=False, tags=["info-ingestion"])
 async def upload_workshop_info(
     collection_name: str = Form(...),
     user_input: WorkshopIngestionInput = Depends(workshop_form_dependency),
