@@ -6,6 +6,7 @@ import {
   Select,
   SelectItem,
   InlineNotification,
+  InlineLoading
 } from "carbon-components-react";
 
 export default function UploadFiles() {
@@ -98,13 +99,20 @@ export default function UploadFiles() {
         filenameStatus={uploading ? "uploading" : "edit"}
       />
 
-      <Button
-        onClick={uploadFiles}
-        disabled={uploading}
-        kind="primary"
-      >
-        {uploading ? "Uploading…" : "Upload"}
-      </Button>
+      {uploading ? (
+        <InlineLoading
+          description="Uploading files…"
+          status="active"
+        />
+      ) : (
+        <Button
+          onClick={uploadFiles}
+          kind="primary"
+        >
+          Upload
+        </Button>
+      )}
+
 
       {notification && (
         <InlineNotification

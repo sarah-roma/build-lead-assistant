@@ -6,6 +6,7 @@ import {
   Select,
   SelectItem,
   InlineNotification,
+  InlineLoading,
 } from "carbon-components-react";
 
 export default function UploadMuralBoard() {
@@ -13,6 +14,7 @@ export default function UploadMuralBoard() {
   const [collectionName, setCollectionName] = useState("");
   const [url, setUrl] = useState("");
   const [notification, setNotification] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const loadCollections = async () => {
@@ -41,6 +43,9 @@ export default function UploadMuralBoard() {
       });
       return;
     }
+
+    setLoading(true); // <-- start loading
+    setNotification(null);
 
     try {
       const res = await fetch(
@@ -71,6 +76,8 @@ export default function UploadMuralBoard() {
         subtitle:
           "We couldn’t ingest data from this Mural board. Please check the URL and try again.",
       });
+    } finally {
+      setLoading(false); // <-- stop loading
     }
   };
 
@@ -98,7 +105,16 @@ export default function UploadMuralBoard() {
         onChange={(e) => setUrl(e.target.value)}
       />
 
-      <Button onClick={uploadMural}>Upload</Button>
+      {/* InlineLoading replaces button while loading */}
+      {loading ? (
+        <InlineLoading
+          description="Uploading Mural board…"
+          status="active"
+          style={{ marginTop: "1rem" }}
+        />
+      ) : (
+        <Button onClick={uploadMural}>Upload</Button>
+      )}
 
       {notification && (
         <InlineNotification

@@ -6,6 +6,7 @@ import {
   Select,
   SelectItem,
   InlineNotification,
+  InlineLoading,
 } from "carbon-components-react";
 
 export default function UploadWorkshop() {
@@ -17,6 +18,7 @@ export default function UploadWorkshop() {
     { name: "", job_title: "", team: "", company: "" },
   ]);
   const [notification, setNotification] = useState(null);
+  const [loading, setLoading] = useState(false); // <-- added loading state
 
   useEffect(() => {
     const loadCollections = async () => {
@@ -53,6 +55,9 @@ export default function UploadWorkshop() {
       });
       return;
     }
+
+    setLoading(true); // <-- start loading
+    setNotification(null);
 
     const formData = new FormData();
     formData.append("collection_name", collectionName);
@@ -102,6 +107,8 @@ export default function UploadWorkshop() {
         subtitle:
           "We couldn’t process the workshop information. Please check the inputs and try again.",
       });
+    } finally {
+      setLoading(false); // <-- stop loading
     }
   };
 
@@ -173,9 +180,18 @@ export default function UploadWorkshop() {
         Add Attendee
       </Button>
 
-      <Button kind="primary" onClick={uploadWorkshop}>
-        Upload Workshop
-      </Button>
+      {/* InlineLoading replaces the upload button while loading */}
+      {loading ? (
+        <InlineLoading
+          description="Uploading workshop…"
+          status="active"
+          style={{ marginTop: "1rem" }}
+        />
+      ) : (
+        <Button kind="primary" onClick={uploadWorkshop}>
+          Upload Workshop
+        </Button>
+      )}
 
       {notification && (
         <InlineNotification

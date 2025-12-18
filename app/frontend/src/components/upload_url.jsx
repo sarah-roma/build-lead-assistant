@@ -6,6 +6,7 @@ import {
   Select,
   SelectItem,
   InlineNotification,
+  InlineLoading,
 } from "carbon-components-react";
 
 export default function UploadURL() {
@@ -13,6 +14,7 @@ export default function UploadURL() {
   const [collectionName, setCollectionName] = useState("");
   const [url, setUrl] = useState("");
   const [notification, setNotification] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const loadCollections = async () => {
@@ -46,6 +48,9 @@ export default function UploadURL() {
     formData.append("collection_name", collectionName);
     formData.append("url", url);
 
+    setLoading(true); // <-- start loading
+    setNotification(null);
+
     try {
       const res = await fetch("http://localhost:8000/Upload a URL/", {
         method: "POST",
@@ -64,8 +69,7 @@ export default function UploadURL() {
         subtitle: data.message,
       });
 
-      // Optional UX improvement
-      setUrl("");
+      setUrl(""); // Optional UX improvement
     } catch (err) {
       console.error("UploadURL failed:", err);
       setNotification({
@@ -74,6 +78,8 @@ export default function UploadURL() {
         subtitle:
           "We couldn’t ingest the content from this URL. Please check the link and try again.",
       });
+    } finally {
+      setLoading(false); // <-- stop loading
     }
   };
 
@@ -101,7 +107,16 @@ export default function UploadURL() {
         onChange={(e) => setUrl(e.target.value)}
       />
 
-      <Button onClick={uploadURL}>Upload</Button>
+      {/* InlineLoading replaces button while loading */}
+      {loading ? (
+        <InlineLoading
+          description="Uploading URL…"
+          status="active"
+          style={{ marginTop: "1rem" }}
+        />
+      ) : (
+        <Button onClick={uploadURL}>Upload</Button>
+      )}
 
       {notification && (
         <InlineNotification

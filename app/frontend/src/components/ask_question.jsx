@@ -6,6 +6,7 @@ import {
   Select,
   SelectItem,
   InlineNotification,
+  InlineLoading, // <-- import InlineLoading
 } from "carbon-components-react";
 
 export default function AskQuestion() {
@@ -91,13 +92,21 @@ export default function AskQuestion() {
         onChange={(e) => setQuestion(e.target.value)}
       />
 
-      <Button
-        onClick={askQuestion}
-        kind="primary"
-        disabled={loading}
-      >
-        {loading ? "Searching…" : "Ask"}
-      </Button>
+      {/* InlineLoading replaces the button while loading */}
+      {loading ? (
+        <InlineLoading
+          description="Searching…"
+          status="active"
+          style={{ marginTop: "1rem" }}
+        />
+      ) : (
+        <Button
+          onClick={askQuestion}
+          kind="primary"
+        >
+          Ask
+        </Button>
+      )}
 
       {notification && (
         <InlineNotification
