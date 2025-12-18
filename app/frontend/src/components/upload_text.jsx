@@ -12,7 +12,8 @@ export default function UploadText() {
   // Text area content to upload
   const [information, setInformation] = useState("");
   // Message area to show server response or validation errors
-  const [message, setMessage] = useState("");
+  const [notification, setNotification] = useState(null);
+
 
   // On mount, load available collections and default to the first one
   useEffect(() => {
@@ -27,19 +28,57 @@ export default function UploadText() {
   // Trigger to upload the `information` text to the selected collection.
   // Shows a friendly message if no collection is selected or when a
   // network error occurs.
-  const uploadText = async () => {
-    if (!collectionName) return setMessage("Select a collection");
-    try {
-      const res = await fetch(
-        `http://localhost:8000/Upload Text/?collection_name=${encodeURIComponent(collectionName)}&information=${encodeURIComponent(information)}`
-      );
-      const data = await res.json();
-      setMessage(JSON.stringify(data, null, 2));
-    } catch (err) {
-        console.error("UploadText failed:", err);
-        setMessage("Network error");
+const uploadText = async () => {
+  if (!collectionName) {
+    setNotification({
+      kind: "error",
+      title: "No collection selected",
+      subtitle: "Please select a collection before uploading text.",
+    });
+    return;
+  }
+
+  if (!information.trim()) {
+    setNotification({
+      kind: "error",
+      title: "No text provided",
+      subtitle: "Please enter some text to upload.",
+    });
+    return;
+  }
+
+  try {
+    const res = await fetch(
+      `http://localhost:8000/Upload Text/?collection_name=${encodeURIComponent(
+        collectionName
+      )}&information=${encodeURIComponent(information)}`
+    );
+
+    const data = await res.json();
+
+    if (!res.ok || data.status !== "success") {
+      throw new Error(data.detail || "Upload failed");
     }
-  };
+
+    setNotification({
+      kind: "success",
+      title: data.title,
+      subtitle: data.message,
+    });
+
+    // Optional UX improvement
+    setInformation("");
+
+  } catch (err) {
+    console.error("UploadText failed:", err);
+    setNotification({
+      kind: "error",
+      title: "Upload failed",
+      subtitle: "Something went wrong while uploading your text.",
+    });
+  }
+};
+
 
   return (
     <div>
@@ -65,11 +104,14 @@ export default function UploadText() {
       />
       <Button onClick={uploadText}>Upload</Button>
       {/* Response and debug output shown nicely */}
-      {message && <InlineNotification
-        kind="info"
-        title="Response"
-        subtitle={message}
-      />}
+      {notification && (
+        <InlineNotification
+          kind={notification.kind}
+          title={notification.title}
+          subtitle={notification.subtitle}
+          onCloseButtonClick={() => setNotification(null)}
+        />
+      )}
     </div>
   );
 }

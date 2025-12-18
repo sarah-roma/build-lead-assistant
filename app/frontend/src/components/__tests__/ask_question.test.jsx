@@ -11,16 +11,21 @@ describe('AskQuestion', () => {
   afterEach(() => jest.restoreAllMocks());
 
   test('submits question and displays response', async () => {
-    global.fetch.mockResolvedValueOnce({ json: async () => ({ answer: 'Yes' }) });
+    // Component expects res.ok and returns { answer }
+    global.fetch.mockResolvedValueOnce({ ok: true, json: async () => ({ answer: 'Yes' }) });
 
     render(<AskQuestion />);
 
     await waitFor(() => expect(screen.getByDisplayValue('qaCol')).toBeInTheDocument());
 
-    fireEvent.change(screen.getByLabelText('Your Question'), { target: { value: 'Is it working?' } });
-    fireEvent.click(screen.getByText('Submit'));
+    // The TextInput label is 'Your question' (lowercase q) and has id 'question-input'
+    fireEvent.change(screen.getByPlaceholderText('Type your question here'), { target: { value: 'Is it working?' } });
+    // Button text is 'Ask'
+    fireEvent.click(screen.getByText('Ask'));
 
-    await waitFor(() => expect(screen.getByText(/"answer": "Yes"/)).toBeInTheDocument());
+    // Component displays the answer in a paragraph under the heading 'Answer:'
+    await waitFor(() => expect(screen.getByText('Answer:')).toBeInTheDocument());
+    expect(screen.getByText('Yes')).toBeInTheDocument();
     expect(global.fetch).toHaveBeenCalledTimes(1);
   });
 });

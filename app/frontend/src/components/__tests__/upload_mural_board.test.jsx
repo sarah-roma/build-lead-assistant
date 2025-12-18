@@ -11,15 +11,17 @@ describe('UploadMuralBoard', () => {
   afterEach(() => jest.restoreAllMocks());
 
   test('uploads mural board url', async () => {
-    global.fetch.mockResolvedValueOnce({ json: async () => ({ ok: true }) });
+    global.fetch.mockResolvedValueOnce({ ok: true, json: async () => ({ status: 'success', title: 'Mural uploaded', message: 'Mural added' }) });
 
     render(<UploadMuralBoard />);
 
     await waitFor(() => expect(screen.getByDisplayValue('muralCol')).toBeInTheDocument());
 
-    fireEvent.change(screen.getByPlaceholderText('Mural Board URL'), { target: { value: 'http://mural.example' } });
+    // Component uses placeholder 'https://app.mural.co/...'
+    fireEvent.change(screen.getByPlaceholderText('https://app.mural.co/...'), { target: { value: 'http://mural.example' } });
     fireEvent.click(screen.getByText('Upload'));
 
-    await waitFor(() => expect(screen.getByText(/"ok": true/)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText('Mural uploaded')).toBeInTheDocument());
+    expect(screen.getByText('Mural added')).toBeInTheDocument();
   });
 });

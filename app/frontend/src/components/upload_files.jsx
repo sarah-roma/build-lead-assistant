@@ -1,15 +1,20 @@
 import { useState, useEffect } from "react";
 import { fetchCollections } from "../utils";
-import { Button, FileUploader, Select, SelectItem, InlineNotification } from "carbon-components-react";
+import {
+  Button,
+  FileUploader,
+  Select,
+  SelectItem,
+  InlineNotification,
+} from "carbon-components-react";
 
 export default function UploadFiles() {
   const [collections, setCollections] = useState([]);
   const [collectionName, setCollectionName] = useState("");
-  // `files` is a FileList from the input element (or null if none selected)
-  const [files, setFiles] = useState(null);
-  const [message, setMessage] = useState("");
+  const [files, setFiles] = useState([]);
+  const [notification, setNotification] = useState(null);
+  const [uploading, setUploading] = useState(false);
 
-  // Load collections on mount and default to first if present
   useEffect(() => {
     const loadCollections = async () => {
       const cols = await fetchCollections();
@@ -19,51 +24,96 @@ export default function UploadFiles() {
     loadCollections();
   }, []);
 
-  // Store the FileList when the user selects files
-  const handleFileChange = (e) => setFiles(e.target.files);
-
-  // Build a FormData object and POST it to the backend. We append all files
-  // under the same key "file" and include the collection name as a field.
   const uploadFiles = async () => {
-    if (!files || !collectionName) return setMessage("Select a collection and files");
+    if (!files.length || !collectionName) {
+      setNotification({
+        kind: "error",
+        title: "Missing information",
+        subtitle: "Please select a collection and at least one file.",
+      });
+      return;
+    }
+
     const formData = new FormData();
-    for (let i = 0; i < files.length; i++) formData.append("file", files[i]);
+    files.forEach((file) => formData.append("file", file));
     formData.append("collection_name", collectionName);
 
+    setUploading(true);
+    setNotification(null);
+
     try {
-      const res = await fetch(`http://localhost:8000/Upload Files/`, {
+      const res = await fetch("http://localhost:8000/Upload Files/", {
         method: "POST",
         body: formData,
       });
+
       const data = await res.json();
-      setMessage(JSON.stringify(data, null, 2));
+
+      if (!res.ok) {
+        throw new Error(data.detail || "Upload failed");
+      }
+
+      setNotification({
+        kind: "success",
+        title: "Files uploaded successfully",
+        subtitle: `${files.length} file(s) were added to "${collectionName}".`,
+      });
+
+      // IMPORTANT: reset uploader state so spinner clears
+      setFiles([]);
     } catch (err) {
-        console.error("UploadFiles failed:", err);
-        setMessage("Network error");
+      console.error("UploadFiles failed:", err);
+      setNotification({
+        kind: "error",
+        title: "Upload failed",
+        subtitle:
+          "We couldn’t process the selected files. Please check the file types and try again.",
+      });
+    } finally {
+      setUploading(false);
     }
   };
 
   return (
     <div>
       <h2>Upload Files</h2>
+
       <Select
         id="collection-select"
         labelText="Select a collection"
         value={collectionName}
         onChange={(e) => setCollectionName(e.target.value)}
       >
-        {collections.map((col, idx) => <SelectItem key={idx} value={col} text={col} />)}
+        {collections.map((col, idx) => (
+          <SelectItem key={idx} value={col} text={col} />
+        ))}
       </Select>
-      {/* Native file input, allows multiple selection */}
+
       <FileUploader
         accept={[".pdf", ".txt", ".docx"]}
-        buttonLabel="Add Files"
+        buttonLabel="Add files"
         labelDescription="Drag and drop files here or click to upload"
-        onChange={(event) => setFiles(Array.from(event.target.files))}
         multiple
+        onChange={(event) => setFiles(Array.from(event.target.files))}
+        filenameStatus={uploading ? "uploading" : "edit"}
       />
-      <Button onClick={uploadFiles}>Upload</Button>
-      {message && <InlineNotification kind="info" title="Response" subtitle={message} />}
+
+      <Button
+        onClick={uploadFiles}
+        disabled={uploading}
+        kind="primary"
+      >
+        {uploading ? "Uploading…" : "Upload"}
+      </Button>
+
+      {notification && (
+        <InlineNotification
+          kind={notification.kind}
+          title={notification.title}
+          subtitle={notification.subtitle}
+          onCloseButtonClick={() => setNotification(null)}
+        />
+      )}
     </div>
   );
 }

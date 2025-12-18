@@ -115,6 +115,7 @@ def get_mural_token():
 
 
 # Uploading Mural widgets
+# Can I automatically close the authentication window?
 @app.get("/Upload a Mural Board/", tags=["info-ingestion"])
 async def get_widgets(
     collection_name: str,
@@ -144,10 +145,17 @@ async def get_widgets(
 
         client.insert(collection_name, payload)
         return {
-                    "message": f"Data successfully inserted into {collection_name}",
-                    "chunks": mural_chunks,
-                    "embeddings": file_embeddings
-                }
+            "status": "success",
+            "title": "Mural board ingested",
+            "message": (
+                f"Your Mural board input has been successfully saved to the "
+                f"'{collection_name}' collection."
+            ),
+            "details": {
+                "content_type": "manual text input",
+                "chunks_created": len(chunks_list),
+            }
+        }
     except Exception as e:
         logging.exception("Error occurred while uploading mural widgets")
         raise HTTPException(status_code=500, detail=str(e))
@@ -225,8 +233,16 @@ async def upload_url(
         client.insert(collection_name, payload)
 
         return {
-            "message": f"URL content inserted into {collection_name}",
-            "chunk_count": len(chunks),
+            "status": "success",
+            "title": "URL content ingested",
+            "message": (
+                f"Information from the URL has been successfully saved to the "
+                f"'{collection_name}' collection."
+            ),
+            "details": {
+                "content_type": "url input",
+                "chunks_created": len(url_chunks),
+            }
         }
 
     except Exception as e:
@@ -257,10 +273,18 @@ async def upload_text(
 
         client.insert(collection_name, payload)
         return {
-                    "message": f"Data successfully inserted into {collection_name}",
-                    "chunks": information_chunks,
-                    "embeddings": file_embeddings
-                }
+            "status": "success",
+            "title": "Text ingested",
+            "message": (
+                f"Your text has been successfully saved to the "
+                f"'{collection_name}' collection."
+            ),
+            "details": {
+                "content_type": "manual text input",
+                "chunks_created": len(information_chunks_list),
+            }
+        }
+
     except Exception as e:
         logging.exception("Error occurred while uploading url content")
         raise HTTPException(status_code=500, detail=str(e))
@@ -338,10 +362,16 @@ async def upload_workshop_info(
         client.insert(collection_name, payload)
 
         return {
-            "message": f"Workshop data successfully inserted into {collection_name}",
-            "combined_text": contextual_text,
-            "chunks": chunk_map,
-            "embeddings": embeddings
+            "status": "success",
+            "title": "Workshop ingested",
+            "message": (
+                f"Your workshop information has been successfully saved to the "
+                f"'{collection_name}' collection."
+            ),
+            "details": {
+                "content_type": "manual workshop text input",
+                "chunks_created": len(chunk_map),
+            }
         }
 
     except Exception as e:
@@ -353,7 +383,12 @@ async def ask_your_question(collection_name: str, question: str):
     try:
         milvus_client = milvus_setup.get_milvus_client()
         response = crag_retrieval_flow(question, milvus_client, collection_name)
-        return {"response": response}
+        answer_text = response.get("response", "No answer available.")
+        return {
+            "collection": collection_name,
+            "question": question,
+            "answer": answer_text
+        }
     except Exception as e:
         logging.exception("Error occurred while processing the question")
         raise HTTPException(status_code=500, detail=str(e))

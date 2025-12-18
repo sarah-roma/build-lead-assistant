@@ -13,7 +13,7 @@ describe('UploadText', () => {
   });
 
   test('renders and uploads text', async () => {
-    global.fetch.mockResolvedValueOnce({ json: async () => ({ status: 'ok' }) });
+    global.fetch.mockResolvedValueOnce({ ok: true, json: async () => ({ status: 'success', title: 'Upload successful', message: 'Uploaded' }) });
 
     render(<UploadText />);
 
@@ -26,7 +26,9 @@ describe('UploadText', () => {
     fireEvent.change(textarea, { target: { value: 'some information' } });
     fireEvent.click(button);
 
-    await waitFor(() => expect(screen.getByText(/"status": "ok"/)).toBeInTheDocument());
+    // Expect the notification title/message to appear
+    await waitFor(() => expect(screen.getByText('Upload successful')).toBeInTheDocument());
+    expect(screen.getByText('Uploaded')).toBeInTheDocument();
     expect(global.fetch).toHaveBeenCalledTimes(1);
   });
 });

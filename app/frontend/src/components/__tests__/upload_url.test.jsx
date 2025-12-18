@@ -11,17 +11,21 @@ describe('UploadURL', () => {
   afterEach(() => jest.restoreAllMocks());
 
   test('renders and uploads a URL', async () => {
-    global.fetch.mockResolvedValueOnce({ ok: true, json: async () => ({ ok: true }) });
+    // Component expects res.ok and data.status === 'success'
+    global.fetch.mockResolvedValueOnce({ ok: true, json: async () => ({ status: 'success', title: 'Uploaded', message: 'URL added' }) });
 
     render(<UploadURL />);
 
     await waitFor(() => expect(screen.getByDisplayValue('colA')).toBeInTheDocument());
 
-    const input = screen.getByPlaceholderText('URL');
+    // The component uses placeholder 'https://example.com/article'
+    const input = screen.getByPlaceholderText('https://example.com/article');
     fireEvent.change(input, { target: { value: 'http://example.com' } });
     fireEvent.click(screen.getByText('Upload'));
 
-    await waitFor(() => expect(screen.getByText(/"ok": true/)).toBeInTheDocument());
+    // Expect the success notification to show the server title/message
+    await waitFor(() => expect(screen.getByText('Uploaded')).toBeInTheDocument());
+    expect(screen.getByText('URL added')).toBeInTheDocument();
     expect(global.fetch).toHaveBeenCalledTimes(1);
   });
 });

@@ -1,16 +1,19 @@
 import { useState, useEffect } from "react";
 import { fetchCollections } from "../utils";
-import { TextInput, Button, Select, SelectItem, InlineNotification } from "carbon-components-react";
-
+import {
+  TextInput,
+  Button,
+  Select,
+  SelectItem,
+  InlineNotification,
+} from "carbon-components-react";
 
 export default function UploadMuralBoard() {
   const [collections, setCollections] = useState([]);
   const [collectionName, setCollectionName] = useState("");
-  // Mural board URL input
   const [url, setUrl] = useState("");
-  const [message, setMessage] = useState("");
+  const [notification, setNotification] = useState(null);
 
-  // Load collections when the component mounts and default to the first
   useEffect(() => {
     const loadCollections = async () => {
       const cols = await fetchCollections();
@@ -20,45 +23,91 @@ export default function UploadMuralBoard() {
     loadCollections();
   }, []);
 
-  // Send the mural URL to the backend. The endpoint will handle fetching
-  // and extracting content from the mural board.
   const uploadMural = async () => {
-    if (!collectionName) return setMessage("Select a collection");
+    if (!collectionName) {
+      setNotification({
+        kind: "error",
+        title: "No collection selected",
+        subtitle: "Please choose a collection to store the Mural board content.",
+      });
+      return;
+    }
+
+    if (!url.trim()) {
+      setNotification({
+        kind: "error",
+        title: "No Mural URL provided",
+        subtitle: "Please enter a valid Mural board URL.",
+      });
+      return;
+    }
+
     try {
       const res = await fetch(
-        `http://localhost:8000/Upload a Mural Board/?collection_name=${encodeURIComponent(collectionName)}&url=${encodeURIComponent(url)}`
+        `http://localhost:8000/Upload a Mural Board/?collection_name=${encodeURIComponent(
+          collectionName
+        )}&url=${encodeURIComponent(url)}`
       );
+
       const data = await res.json();
-      setMessage(JSON.stringify(data, null, 2));
+
+      if (!res.ok || data.status !== "success") {
+        throw new Error(data.detail || "Upload failed");
+      }
+
+      setNotification({
+        kind: "success",
+        title: data.title,
+        subtitle: data.message,
+      });
+
+      // Optional UX improvement
+      setUrl("");
     } catch (err) {
-        console.error("UploadMuralBoard failed:", err);
-        setMessage("Network error");
+      console.error("UploadMuralBoard failed:", err);
+      setNotification({
+        kind: "error",
+        title: "Upload failed",
+        subtitle:
+          "We couldn’t ingest data from this Mural board. Please check the URL and try again.",
+      });
     }
   };
 
   return (
     <div>
       <h2>Upload Mural Board</h2>
-      {/* Collection selector */}
+
       <Select
         id="collection-select"
         labelText="Select a collection"
         value={collectionName}
         onChange={(e) => setCollectionName(e.target.value)}
       >
-        {collections.map((col, idx) => <SelectItem key={idx} value={col} text={col} />)}
+        {collections.map((col, idx) => (
+          <SelectItem key={idx} value={col} text={col} />
+        ))}
       </Select>
-      {/* URL input for MURAL board */}
+
       <TextInput
         id="mural-url"
         labelText="Mural Board URL"
         type="text"
-        placeholder="Mural Board URL"
+        placeholder="https://app.mural.co/..."
         value={url}
         onChange={(e) => setUrl(e.target.value)}
       />
+
       <Button onClick={uploadMural}>Upload</Button>
-      {message && <InlineNotification kind="info" title="Response" subtitle={message} />}
+
+      {notification && (
+        <InlineNotification
+          kind={notification.kind}
+          title={notification.title}
+          subtitle={notification.subtitle}
+          onCloseButtonClick={() => setNotification(null)}
+        />
+      )}
     </div>
   );
 }

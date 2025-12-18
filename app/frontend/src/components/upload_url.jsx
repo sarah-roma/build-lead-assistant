@@ -1,17 +1,19 @@
 import { useState, useEffect } from "react";
 import { fetchCollections } from "../utils";
-import { TextInput, Button, Select, SelectItem, InlineNotification } from "carbon-components-react";
-
+import {
+  TextInput,
+  Button,
+  Select,
+  SelectItem,
+  InlineNotification,
+} from "carbon-components-react";
 
 export default function UploadURL() {
   const [collections, setCollections] = useState([]);
   const [collectionName, setCollectionName] = useState("");
-  // URL text input
   const [url, setUrl] = useState("");
-  // Message area for server response or errors
-  const [message, setMessage] = useState("");
+  const [notification, setNotification] = useState(null);
 
-  // Load collections once when component mounts
   useEffect(() => {
     const loadCollections = async () => {
       const cols = await fetchCollections();
@@ -21,62 +23,94 @@ export default function UploadURL() {
     loadCollections();
   }, []);
 
-  // Send the URL to the backend; show an error if no collection is selected
   const uploadURL = async () => {
-  if (!collectionName || !url) {
-    return setMessage("Select a collection and enter a URL");
-  }
-
-  const formData = new FormData();
-  formData.append("collection_name", collectionName);
-  formData.append("url", url);
-
-  try {
-    const res = await fetch("http://localhost:8000/Upload a URL/", {
-      method: "POST",
-      body: formData,
-    });
-
-    if (!res.ok) {
-      const text = await res.text();
-      throw new Error(text);
+    if (!collectionName) {
+      setNotification({
+        kind: "error",
+        title: "No collection selected",
+        subtitle: "Please choose a collection to store the URL content.",
+      });
+      return;
     }
 
-    const data = await res.json();
-    setMessage(JSON.stringify(data, null, 2));
-  } catch (err) {
-    console.error("UploadURL failed:", err);
-    setMessage("Upload failed");
-  }
-};
+    if (!url.trim()) {
+      setNotification({
+        kind: "error",
+        title: "No URL provided",
+        subtitle: "Please enter a valid URL to upload.",
+      });
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("collection_name", collectionName);
+    formData.append("url", url);
+
+    try {
+      const res = await fetch("http://localhost:8000/Upload a URL/", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || data.status !== "success") {
+        throw new Error(data.detail || "Upload failed");
+      }
+
+      setNotification({
+        kind: "success",
+        title: data.title,
+        subtitle: data.message,
+      });
+
+      // Optional UX improvement
+      setUrl("");
+    } catch (err) {
+      console.error("UploadURL failed:", err);
+      setNotification({
+        kind: "error",
+        title: "Upload failed",
+        subtitle:
+          "We couldn’t ingest the content from this URL. Please check the link and try again.",
+      });
+    }
+  };
 
   return (
     <div>
       <h2>Upload URL</h2>
-      {/* Choose which collection to associate the URL with */}
+
       <Select
         id="collection-select"
         labelText="Select a collection"
         value={collectionName}
         onChange={(e) => setCollectionName(e.target.value)}
       >
-        {collections.map((col, idx) => <SelectItem key={idx} value={col} text={col} />)}
+        {collections.map((col, idx) => (
+          <SelectItem key={idx} value={col} text={col} />
+        ))}
       </Select>
-      {/* URL input field */}
+
       <TextInput
         id="url"
         labelText="URL"
         type="text"
-        placeholder="URL"
+        placeholder="https://example.com/article"
         value={url}
         onChange={(e) => setUrl(e.target.value)}
       />
+
       <Button onClick={uploadURL}>Upload</Button>
-      {message && <InlineNotification
-        kind="info"
-        title="Response"
-        subtitle={message}
-      />}
+
+      {notification && (
+        <InlineNotification
+          kind={notification.kind}
+          title={notification.title}
+          subtitle={notification.subtitle}
+          onCloseButtonClick={() => setNotification(null)}
+        />
+      )}
     </div>
   );
 }

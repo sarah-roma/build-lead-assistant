@@ -11,7 +11,7 @@ describe('UploadWorkshop', () => {
   afterEach(() => jest.restoreAllMocks());
 
   test('sends workshop info via POST and shows response', async () => {
-    global.fetch.mockResolvedValueOnce({ json: async () => ({ status: 'created' }) });
+    global.fetch.mockResolvedValueOnce({ ok: true, json: async () => ({ status: 'created' }) });
 
     render(<UploadWorkshop />);
 
@@ -20,13 +20,16 @@ describe('UploadWorkshop', () => {
     // Fill in fields according to the current form structure
     fireEvent.change(screen.getByPlaceholderText('e.g. 12 March 2024'), { target: { value: '12 March 2024' } });
     fireEvent.change(screen.getByPlaceholderText('https://app.mural.co/...'), { target: { value: 'https://app.mural.co/example' } });
-    // Add attendee info so the form will include attendee fields (query by label)
-    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Alice' } });
+
+    // Attendee inputs don't have id attributes; get all textboxes and target the attendee name
+    const textboxes = screen.getAllByRole('textbox');
+    // Index mapping: 0 = workshop-date, 1 = mural-url, 2 = attendee name
+    fireEvent.change(textboxes[2], { target: { value: 'Alice' } });
 
     fireEvent.click(screen.getByText('Upload Workshop'));
 
-    await waitFor(() => expect(screen.getByText(/"status": "created"/)).toBeInTheDocument());
-    // Ensure the POST request was made
+    // Component shows success notification title when successful
+    await waitFor(() => expect(screen.getByText('Workshop ingested successfully')).toBeInTheDocument());
     expect(global.fetch).toHaveBeenCalledTimes(1);
   });
 });

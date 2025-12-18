@@ -63,12 +63,11 @@ def test_upload_mural_widgets(
     response = client.get("/Upload a Mural Board/?collection_name=existing_collection&url=https://app.mural.co/t/x/m/x/123/")
 
     assert response.status_code == 200
-    json = response.json()
+    body = response.json()
 
-    assert "chunks" in json
-    assert "embeddings" in json
-    assert "message" in json
-    assert json["message"] == "Data successfully inserted into existing_collection"
+    assert body["status"] == "success"
+    assert body["title"] == "Mural board ingested"
+    assert body["details"]["chunks_created"] == 2
 
 
 # Test mural widget upload: collection missing
@@ -180,10 +179,9 @@ def test_upload_url_success(
     assert response.status_code == 200
     body = response.json()
 
-    # Updated to match endpoint response
-    assert body["message"] == "URL content inserted into existing_collection"
-    assert "chunk_count" in body
-    assert body["chunk_count"] == 1
+    assert body["status"] == "success"
+    assert "URL" in body["title"]
+    assert body["details"]["chunks_created"] == 1
 
 
 
@@ -324,9 +322,10 @@ def test_upload_text_success(
     assert response.status_code == 200
     body = response.json()
 
-    assert body["message"] == "Data successfully inserted into existing_collection"
-    assert "chunks" in body
-    assert "embeddings" in body
+    assert body["status"] == "success"
+    assert body["title"] == "Text ingested"
+    assert body["details"]["chunks_created"] == 1
+
 
 # Test text upload with no text
 @patch("main.milvus_setup.get_milvus_client")
@@ -355,9 +354,9 @@ def test_upload_text_empty_string(mock_get_client):
     # Validate the structure.
     assert response.status_code == 200
     body = response.json()
-    assert "message" in body
-    assert "chunks" in body
-    assert "embeddings" in body
+
+    assert body["status"] == "success"
+    assert body["details"]["chunks_created"] == 0
 
 
 # Test text upload with missing collection
@@ -473,8 +472,12 @@ def test_upload_workshop_multiple_attendees(
 
     assert response.status_code == 200
     body = response.json()
-    assert "Alice" in body["combined_text"]
-    assert "Bob" in body["combined_text"]
+
+    assert body["status"] == "success"
+    assert body["title"] == "Workshop ingested"
+    assert body["details"]["content_type"] == "manual workshop text input"
+    assert body["details"]["chunks_created"] > 0
+
 
 
 # Test collection missing
@@ -534,4 +537,8 @@ def test_upload_workshop_minimal(
     )
 
     assert response.status_code == 200
-    assert "Alice" in response.json()["combined_text"]
+    body = response.json()
+
+    assert body["status"] == "success"
+    assert body["title"] == "Workshop ingested"
+    assert body["details"]["chunks_created"] >= 1
