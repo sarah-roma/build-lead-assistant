@@ -10,3 +10,5 @@
     raise Exception(f"Failed to connect to Milvus server: {e}")
     Exception: Failed to connect to Milvus server: <MilvusException: (code=2, message=Fail connecting to server on 127.0.0.1:19530, illegal connection params or server unavailable)>
 ```
+
+docker compose -f docker-compose.yml up -d
