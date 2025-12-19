@@ -1,20 +1,21 @@
 import { useState, useEffect } from "react";
 import { fetchCollections } from "../utils";
-import { TextArea, Button, Select, SelectItem, InlineNotification } from "carbon-components-react";
-// I ran a linter! I then fixed the err response handling as the variable wasnt being used
-// this can definitely be used for evidence
+import {
+  TextArea,
+  Button,
+  Select,
+  SelectItem,
+  InlineNotification,
+  InlineLoading,
+} from "carbon-components-react";
 
 export default function UploadText() {
-  // Collections fetched from the backend so the user can choose where to upload
   const [collections, setCollections] = useState([]);
-  // The currently selected collection name
   const [collectionName, setCollectionName] = useState("");
-  // Text area content to upload
   const [information, setInformation] = useState("");
-  // Message area to show server response or validation errors
-  const [message, setMessage] = useState("");
+  const [notification, setNotification] = useState(null);
+  const [loading, setLoading] = useState(false);
 
-  // On mount, load available collections and default to the first one
   useEffect(() => {
     const loadCollections = async () => {
       const cols = await fetchCollections();
@@ -24,36 +25,76 @@ export default function UploadText() {
     loadCollections();
   }, []);
 
-  // Trigger to upload the `information` text to the selected collection.
-  // Shows a friendly message if no collection is selected or when a
-  // network error occurs.
   const uploadText = async () => {
-    if (!collectionName) return setMessage("Select a collection");
+    if (!collectionName) {
+      setNotification({
+        kind: "error",
+        title: "No collection selected",
+        subtitle: "Please select a collection before uploading text.",
+      });
+      return;
+    }
+
+    if (!information.trim()) {
+      setNotification({
+        kind: "error",
+        title: "No text provided",
+        subtitle: "Please enter some text to upload.",
+      });
+      return;
+    }
+
+    setLoading(true); // <-- start loading
+    setNotification(null);
+
     try {
       const res = await fetch(
-        `http://localhost:8000/Upload Text/?collection_name=${encodeURIComponent(collectionName)}&information=${encodeURIComponent(information)}`
+        `http://localhost:8000/Upload Text/?collection_name=${encodeURIComponent(
+          collectionName
+        )}&information=${encodeURIComponent(information)}`
       );
+
       const data = await res.json();
-      setMessage(JSON.stringify(data, null, 2));
+
+      if (!res.ok || data.status !== "success") {
+        throw new Error(data.detail || "Upload failed");
+      }
+
+      setNotification({
+        kind: "success",
+        title: data.title,
+        subtitle: data.message,
+      });
+
+      // Optional UX improvement
+      setInformation("");
     } catch (err) {
-        console.error("UploadText failed:", err);
-        setMessage("Network error");
+      console.error("UploadText failed:", err);
+      setNotification({
+        kind: "error",
+        title: "Upload failed",
+        subtitle: "Something went wrong while uploading your text.",
+      });
+    } finally {
+      setLoading(false); // <-- stop loading
     }
   };
 
   return (
     <div>
       <h2>Upload Text</h2>
-      {/* Collection selector populated by `collections` */}
+
       <Select
         id="collection-select"
         labelText="Select a collection"
         value={collectionName}
         onChange={(e) => setCollectionName(e.target.value)}
       >
-        {collections.map((col, idx) => <SelectItem key={idx} value={col} text={col} />)}
+        {collections.map((col, idx) => (
+          <SelectItem key={idx} value={col} text={col} />
+        ))}
       </Select>
-      {/* Text area to collect information to upload */}
+
       <TextArea
         id="information"
         labelText="Information"
@@ -63,13 +104,26 @@ export default function UploadText() {
         rows={4}
         cols={50}
       />
-      <Button onClick={uploadText}>Upload</Button>
-      {/* Response and debug output shown nicely */}
-      {message && <InlineNotification
-        kind="info"
-        title="Response"
-        subtitle={message}
-      />}
+
+      {/* InlineLoading replaces button while loading */}
+      {loading ? (
+        <InlineLoading
+          description="Uploading text…"
+          status="active"
+          style={{ marginTop: "1rem" }}
+        />
+      ) : (
+        <Button onClick={uploadText}>Upload</Button>
+      )}
+
+      {notification && (
+        <InlineNotification
+          kind={notification.kind}
+          title={notification.title}
+          subtitle={notification.subtitle}
+          onCloseButtonClick={() => setNotification(null)}
+        />
+      )}
     </div>
   );
 }

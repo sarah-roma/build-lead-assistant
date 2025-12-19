@@ -1,21 +1,21 @@
 import { useState, useEffect } from "react";
 import { fetchCollections } from "../utils";
-
-// Carbon components
 import {
   Button,
   TextInput,
   Select,
   SelectItem,
   InlineNotification,
+  InlineLoading, // <-- import InlineLoading
 } from "carbon-components-react";
 
 export default function AskQuestion() {
   const [collections, setCollections] = useState([]);
   const [collectionName, setCollectionName] = useState("");
   const [question, setQuestion] = useState("");
-  const [response, setResponse] = useState("");
-  const [errorMessage, setErrorMessage] = useState("");
+  const [answer, setAnswer] = useState("");
+  const [notification, setNotification] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const loadCollections = async () => {
@@ -27,7 +27,19 @@ export default function AskQuestion() {
   }, []);
 
   const askQuestion = async () => {
-    if (!collectionName) return setErrorMessage("Select a collection");
+    if (!collectionName || !question) {
+      setNotification({
+        kind: "error",
+        title: "Missing information",
+        subtitle: "Please select a collection and enter a question.",
+      });
+      return;
+    }
+
+    setLoading(true);
+    setAnswer("");
+    setNotification(null);
+
     try {
       const res = await fetch(
         `http://localhost:8000/Ask a Question/?collection_name=${encodeURIComponent(
@@ -35,12 +47,25 @@ export default function AskQuestion() {
         )}&question=${encodeURIComponent(question)}`,
         { method: "POST" }
       );
+
       const data = await res.json();
-      setResponse(JSON.stringify(data, null, 2));
-      setErrorMessage("");
+
+      if (!res.ok) {
+        throw new Error(data.detail || "Request failed");
+      }
+
+      setAnswer(data.answer);
+
     } catch (err) {
       console.error("AskQuestion failed:", err);
-      setErrorMessage("Network error");
+      setNotification({
+        kind: "error",
+        title: "Unable to answer question",
+        subtitle:
+          "Something went wrong while retrieving an answer. Please try again.",
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -50,40 +75,52 @@ export default function AskQuestion() {
 
       <Select
         id="collection-select"
-        labelText="Select Collection"
+        labelText="Select a collection"
         value={collectionName}
         onChange={(e) => setCollectionName(e.target.value)}
       >
         {collections.map((col, idx) => (
-          <SelectItem key={idx} text={col} value={col} />
+          <SelectItem key={idx} value={col} text={col} />
         ))}
       </Select>
 
       <TextInput
         id="question-input"
-        labelText="Your Question"
-        placeholder="Type your question"
+        labelText="Your question"
+        placeholder="Type your question here"
         value={question}
         onChange={(e) => setQuestion(e.target.value)}
       />
 
-      <Button onClick={askQuestion} kind="primary">
-        Submit
-      </Button>
+      {/* InlineLoading replaces the button while loading */}
+      {loading ? (
+        <InlineLoading
+          description="Searching…"
+          status="active"
+          style={{ marginTop: "1rem" }}
+        />
+      ) : (
+        <Button
+          onClick={askQuestion}
+          kind="primary"
+        >
+          Ask
+        </Button>
+      )}
 
-      {errorMessage && (
+      {notification && (
         <InlineNotification
-          kind="error"
-          title="Error"
-          subtitle={errorMessage}
-          lowContrast
+          kind={notification.kind}
+          title={notification.title}
+          subtitle={notification.subtitle}
+          onCloseButtonClick={() => setNotification(null)}
         />
       )}
 
-      {response && (
-        <div style={{ marginTop: "1rem" }}>
-          <h4>Response:</h4>
-          <pre>{response}</pre>
+      {answer && (
+        <div style={{ marginTop: "1.5rem" }}>
+          <h4>Answer:</h4>
+          <p style={{ whiteSpace: "pre-line" }}>{answer}</p>
         </div>
       )}
     </div>

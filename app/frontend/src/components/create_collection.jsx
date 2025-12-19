@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { TextInput, Button, InlineNotification } from "carbon-components-react";
+import { TextInput, Button, InlineNotification, InlineLoading } from "carbon-components-react";
 
 
 export default function CreateCollection() {
@@ -7,11 +7,14 @@ export default function CreateCollection() {
   const [collectionName, setCollectionName] = useState("");
   // Small message area used to show validation or server responses.
   const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
 
   // Handler that validates the input and calls the backend to create a
   // collection. It catches network errors and writes a brief message for UI.
   const createCollection = async () => {
     if (!collectionName) return setMessage("Enter a collection name");
+    setLoading(true);
+    setMessage("");
 
     try {
       const res = await fetch(`http://localhost:8000/Create a Collection/?collection_name=${collectionName}`, {
@@ -24,6 +27,8 @@ export default function CreateCollection() {
     } catch (err) {
         console.error("CreateCollection failed:", err);
         setMessage("Network error");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -39,8 +44,16 @@ export default function CreateCollection() {
         value={collectionName}
         onChange={(e) => setCollectionName(e.target.value)}
       />
-      {/* Trigger collection creation when clicked */}
-      <Button onClick={createCollection}>Create</Button>
+      {/* InlineLoading replaces button while loading */}
+        {loading ? (
+          <InlineLoading
+            description="Creating collection…"
+            status="active"
+            style={{ marginTop: "1rem" }}
+          />
+        ) : (
+          <Button onClick={createCollection}>Create</Button>
+        )}
       {/* Message area for validation/server responses */}
         {message && <InlineNotification
         kind="info"

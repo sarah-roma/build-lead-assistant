@@ -11,7 +11,8 @@ describe('UploadFiles', () => {
   afterEach(() => jest.restoreAllMocks());
 
   test('allows selecting files and uploading', async () => {
-    global.fetch.mockResolvedValueOnce({ json: async () => ({ uploaded: true }) });
+    // Component sets a success notification title on res.ok
+    global.fetch.mockResolvedValueOnce({ ok: true, json: async () => ({}) });
 
     render(<UploadFiles />);
 
@@ -24,7 +25,8 @@ describe('UploadFiles', () => {
 
     fireEvent.click(screen.getByText('Upload'));
 
-    await waitFor(() => expect(screen.getByText(/"uploaded": true/)).toBeInTheDocument());
+    // Expect the notification title to indicate success
+    await waitFor(() => expect(screen.getByText('Files uploaded successfully')).toBeInTheDocument());
     expect(global.fetch).toHaveBeenCalledTimes(1);
   });
 });
