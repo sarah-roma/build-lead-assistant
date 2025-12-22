@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 from typing import Optional, List, Annotated
 import logging
 from enum import Enum
+from contextlib import asynccontextmanager
 
 from utils.milvus_setup import MilvusSetup
 from utils.ingestion.mural_authentication import AuthenticateMural
@@ -16,16 +17,6 @@ from utils.ingestion.url_extraction import extract_url_content
 
 
 load_dotenv()
-app = FastAPI()
-
-# Allow React frontend
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["http://localhost:5173"],  # your React dev server
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 
 tags_metadata = [
@@ -39,13 +30,38 @@ tags_metadata = [
     },
 ]
 
-milvus_setup = MilvusSetup()
-milvus_setup.connect_to_milvus()
-milvus_setup.setup_milvus_db()
+load_dotenv()
 
 logging.basicConfig(
     level=logging.DEBUG,
     format="%(asctime)s - %(levelname)s - %(filename)s:%(lineno)d - %(message)s"
+)
+
+milvus_setup = MilvusSetup()
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
+    logging.info("Starting application, waiting for Milvus...")
+    milvus_setup.connect_with_retry()
+    milvus_setup.setup_milvus_db()
+    logging.info("Milvus ready")
+
+    yield  # application runs here
+
+    # Shutdown (optional, but nice)
+    logging.info("Shutting down application")
+
+
+app = FastAPI(lifespan=lifespan)
+
+# Allow React frontend
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],  # your React dev server
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 

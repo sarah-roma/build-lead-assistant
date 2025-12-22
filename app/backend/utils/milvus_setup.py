@@ -1,7 +1,7 @@
 from pymilvus import connections, db, MilvusClient, DataType
 import os
 import logging
-
+import time
 
 _SENTINEL = object()
 
@@ -48,8 +48,26 @@ class MilvusSetup:
         print(f"Client object: {client}")
         return client
 
-    def connect_to_milvus(self):
+    def connect_with_retry(self, retries=30, delay=3):
+        last_error = None
+        for attempt in range(1, retries + 1):
+            try:
+                connections.connect(
+                    host=self.host,
+                    port=self.port,
+                )
+                logging.info("Connected to Milvus successfully")
+                return
+            except Exception as e:
+                last_error = e
+                logging.warning(
+                    f"Milvus not ready (attempt {attempt}/{retries}), retrying in {delay}s"
+                )
+                time.sleep(delay)
 
+        raise RuntimeError(f"Milvus never became ready: {last_error}")
+
+    def connect_to_milvus(self):
         logging.info(f"Connecting to Milvus at {self.host}:{self.port}")
         try:
             conn = connections.connect(host=self.host, port=self.port)
