@@ -60,6 +60,37 @@ services:
       - "etcd"
       - "minio"
 
+  backend:
+    container_name: test-1-backend
+    build:
+      context: ./app/backend
+      dockerfile: Dockerfile
+    ports:
+      - "8001:8001"
+    environment:
+      - MILVUS_HOST=milvus-standalone
+      - MILVUS_PORT=19530
+    volumes:
+      - ./app/backend:/backend
+    depends_on:
+      - "standalone"
+      - "minio"
+
+  frontend:
+    container_name: test-1-frontend
+    build:
+      context: ./app/frontend
+      dockerfile: Dockerfile
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_URL=http://backend:8001
+    volumes:
+      - ./app/frontend:/frontend
+      - /frontend/node_modules
+    depends_on:
+      - "backend"
+
 networks:
   default:
     name: milvus
