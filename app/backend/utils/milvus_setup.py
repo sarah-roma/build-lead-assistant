@@ -48,11 +48,22 @@ class MilvusSetup:
     #     print(f"Client object: {client}")
     #     return client
 
-    def get_milvus_client(self) -> MilvusClient:
+    # def get_milvus_client(self) -> MilvusClient:
+    #     return MilvusClient(
+    #         host=self.host,
+    #         port=self.port,
+    #     )
+    
+    def get_milvus_client(self):
+        if not self.uri:
+            raise ValueError("MILVUS_URI is not set")
+
         return MilvusClient(
-            host=self.host,
-            port=self.port,
+            uri=self.uri,
+            token=self.token,
+            timeout=30
         )
+
 
     def connect_with_retry(self, retries=30, delay=3):
         last_error = None

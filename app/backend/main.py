@@ -62,15 +62,19 @@ async def lifespan(app: FastAPI):
     global MilvusCollections
 
     logging.info("Starting application, waiting for Milvus...")
+
     milvus_setup.connect_with_retry()
     milvus_setup.setup_milvus_db()
 
-    MilvusCollections = create_dynamic_collection_enum()
+    try:
+        MilvusCollections = create_dynamic_collection_enum()
+    except Exception as e:
+        logging.warning(f"Skipping Milvus collection enum init: {e}")
+        MilvusCollections = None
 
     logging.info("Milvus ready")
     yield
 
-    logging.info("Shutting down application")
 
 
 
