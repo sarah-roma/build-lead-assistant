@@ -38,15 +38,21 @@ class MilvusSetup:
 
         print(f"Current databases:{db.list_database()}")
 
-    def get_milvus_client(self) -> MilvusClient:
-        if self.uri is None:
-            raise ValueError("Milvus URI is not set.")
-        if self.token is None:
-            raise ValueError("Milvus token is not set.")
+    # def get_milvus_client(self) -> MilvusClient:
+    #     if self.uri is None:
+    #         raise ValueError("Milvus URI is not set.")
+    #     if self.token is None:
+    #         raise ValueError("Milvus token is not set.")
 
-        client = MilvusClient(uri=self.uri, token=self.token)
-        print(f"Client object: {client}")
-        return client
+    #     client = MilvusClient(uri=self.uri, token=self.token)
+    #     print(f"Client object: {client}")
+    #     return client
+
+    def get_milvus_client(self) -> MilvusClient:
+        return MilvusClient(
+            host=self.host,
+            port=self.port,
+        )
 
     def connect_with_retry(self, retries=30, delay=3):
         last_error = None

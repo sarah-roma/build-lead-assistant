@@ -39,32 +39,6 @@ logging.basicConfig(
 
 milvus_setup = MilvusSetup()
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    # Startup
-    logging.info("Starting application, waiting for Milvus...")
-    milvus_setup.connect_with_retry()
-    milvus_setup.setup_milvus_db()
-    logging.info("Milvus ready")
-
-    yield  # application runs here
-
-    # Shutdown (optional, but nice)
-    logging.info("Shutting down application")
-
-
-app = FastAPI(lifespan=lifespan)
-
-# Allow React frontend
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["http://localhost:5173"],  # your React dev server
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-
 # functionality for milvus collection dropdown
 def create_dynamic_collection_enum():
     client = milvus_setup.get_milvus_client()
@@ -81,7 +55,35 @@ def create_dynamic_collection_enum():
     )
     return DynamicEnum
 
-MilvusCollections = create_dynamic_collection_enum()
+MilvusCollections = None
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    global MilvusCollections
+
+    logging.info("Starting application, waiting for Milvus...")
+    milvus_setup.connect_with_retry()
+    milvus_setup.setup_milvus_db()
+
+    MilvusCollections = create_dynamic_collection_enum()
+
+    logging.info("Milvus ready")
+    yield
+
+    logging.info("Shutting down application")
+
+
+
+app = FastAPI(lifespan=lifespan)
+
+# Allow React frontend
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],  # your React dev server
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 # @app.get("/View Collections")
