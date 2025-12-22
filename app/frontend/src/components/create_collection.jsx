@@ -17,7 +17,7 @@ export default function CreateCollection() {
     setMessage("");
 
     try {
-      const res = await fetch(`http://localhost:8001/Create a Collection/?collection_name=${collectionName}`, {
+      const res = await fetch(`http://51.15.73.99:8001/Create a Collection/?collection_name=${collectionName}`, {
         method: "POST",
       });
       const data = await res.json();

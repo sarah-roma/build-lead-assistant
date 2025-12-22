@@ -52,7 +52,7 @@ export default function UploadURL() {
     setNotification(null);
 
     try {
-      const res = await fetch("http://localhost:8001/Upload a URL/", {
+      const res = await fetch("http://51.15.73.99:8001/Upload a URL/", {
         method: "POST",
         body: formData,
       });
