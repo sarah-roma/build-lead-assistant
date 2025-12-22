@@ -1,6 +1,6 @@
 export const fetchCollections = async () => {
   try {
-    const res = await fetch("http://localhost:8000/List Collections/");
+    const res = await fetch("http://localhost:8001/List Collections/");
     const data = await res.json();
     return data.collections || [];
   } catch (err) {
