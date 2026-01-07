@@ -43,7 +43,7 @@ export default function UploadFiles() {
     setNotification(null);
 
     try {
-      const res = await fetch("http://51.15.73.99:8001/Upload Files/", {
+      const res = await fetch("http://localhost:8001/Upload Files/", {
         method: "POST",
         body: formData,
       });

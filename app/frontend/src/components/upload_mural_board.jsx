@@ -49,7 +49,7 @@ export default function UploadMuralBoard() {
 
     try {
       const res = await fetch(
-        `http://51.15.73.99:8001/Upload a Mural Board/?collection_name=${encodeURIComponent(
+        `http://localhost:8001/Upload a Mural Board/?collection_name=${encodeURIComponent(
           collectionName
         )}&url=${encodeURIComponent(url)}`
       );

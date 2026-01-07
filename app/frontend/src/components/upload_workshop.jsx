@@ -76,7 +76,7 @@ export default function UploadWorkshop() {
 
     try {
       const res = await fetch(
-        "http://51.15.73.99:8001/Upload Workshop Information/",
+        "http://localhost:8001/Upload Workshop Information/",
         {
           method: "POST",
           body: formData,
