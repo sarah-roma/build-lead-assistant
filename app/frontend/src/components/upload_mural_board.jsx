@@ -9,6 +9,8 @@ import {
   InlineLoading,
 } from "carbon-components-react";
 
+const API_BASE = "http://localhost:8001";
+
 export default function UploadMuralBoard() {
   const [collections, setCollections] = useState([]);
   const [collectionName, setCollectionName] = useState("");
@@ -25,6 +27,34 @@ export default function UploadMuralBoard() {
     loadCollections();
   }, []);
 
+  /**
+   * Single upload attempt
+   */
+  const attemptUpload = async () => {
+    const res = await fetch(
+      `${API_BASE}/Upload a Mural Board/?collection_name=${encodeURIComponent(
+        collectionName
+      )}&url=${encodeURIComponent(url)}`
+    );
+
+    const data = await res.json();
+
+    // OAuth required
+    if (res.status === 401 && data.authorization_url) {
+      window.open(data.authorization_url, "_blank");
+      throw new Error("AUTH_REQUIRED");
+    }
+
+    if (!res.ok || data.status !== "success") {
+      throw new Error(data.detail || "Upload failed");
+    }
+
+    return data;
+  };
+
+  /**
+   * Main handler
+   */
   const uploadMural = async () => {
     if (!collectionName) {
       setNotification({
@@ -44,20 +74,25 @@ export default function UploadMuralBoard() {
       return;
     }
 
-    setLoading(true); // <-- start loading
+    setLoading(true);
     setNotification(null);
 
     try {
-      const res = await fetch(
-        `http://localhost:8001/Upload a Mural Board/?collection_name=${encodeURIComponent(
-          collectionName
-        )}&url=${encodeURIComponent(url)}`
-      );
+      let data;
 
-      const data = await res.json();
+      try {
+        // First attempt
+        data = await attemptUpload();
+      } catch (err) {
+        if (err.message === "AUTH_REQUIRED") {
+          // Wait briefly for OAuth to complete
+          await new Promise((resolve) => setTimeout(resolve, 1500));
 
-      if (!res.ok || data.status !== "success") {
-        throw new Error(data.detail || "Upload failed");
+          // Retry once
+          data = await attemptUpload();
+        } else {
+          throw err;
+        }
       }
 
       setNotification({
@@ -66,7 +101,6 @@ export default function UploadMuralBoard() {
         subtitle: data.message,
       });
 
-      // Optional UX improvement
       setUrl("");
     } catch (err) {
       console.error("UploadMuralBoard failed:", err);
@@ -74,10 +108,10 @@ export default function UploadMuralBoard() {
         kind: "error",
         title: "Upload failed",
         subtitle:
-          "We couldn’t ingest data from this Mural board. Please check the URL and try again.",
+          "We couldn’t ingest data from this Mural board. Please try again.",
       });
     } finally {
-      setLoading(false); // <-- stop loading
+      setLoading(false);
     }
   };
 
@@ -105,7 +139,6 @@ export default function UploadMuralBoard() {
         onChange={(e) => setUrl(e.target.value)}
       />
 
-      {/* InlineLoading replaces button while loading */}
       {loading ? (
         <InlineLoading
           description="Uploading Mural board…"
