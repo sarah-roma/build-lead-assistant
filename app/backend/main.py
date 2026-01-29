@@ -253,6 +253,8 @@ async def upload_mural_board(
             },
         }
 
+    except HTTPException:
+        raise
     except Exception as e:
         logging.exception("Mural upload failed")
         raise HTTPException(status_code=500, detail=str(e))
