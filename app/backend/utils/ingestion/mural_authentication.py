@@ -113,40 +113,133 @@
 
 #         return token
 
+
+
+# from requests_oauthlib import OAuth2Session
+# import os
+
+# class AuthenticateMural:
+#     def __init__(self):
+#         self.client_id = os.environ["CLIENT_ID"]
+#         self.client_secret = os.environ["CLIENT_SECRET"]
+#         self.redirect_uri = os.environ["REDIRECT_URI"]
+#         self.auth_base_url = os.environ["AUTHORIZATION_BASE_URL"]
+#         self.token_url = os.environ["TOKEN_URL"]
+
+#         self.scopes = [
+#             "murals:read", "murals:write", "rooms:read", "rooms:write",
+#             "templates:read", "templates:write", "workspaces:read",
+#             "users:read", "workspaces:write", "identity:read",
+#         ]
+
+#     def get_authorization_url(self):
+#         mural = OAuth2Session(
+#             self.client_id,
+#             scope=self.scopes,
+#             redirect_uri=self.redirect_uri,
+#         )
+#         authorization_url, state = mural.authorization_url(self.auth_base_url)
+#         return authorization_url, state
+
+#     def fetch_token(self, authorization_response: str):
+#         mural = OAuth2Session(
+#             self.client_id,
+#             redirect_uri=self.redirect_uri,
+#         )
+#         token = mural.fetch_token(
+#             self.token_url,
+#             client_secret=self.client_secret,
+#             authorization_response=authorization_response,
+#         )
+#         return token
+
+
 from requests_oauthlib import OAuth2Session
 import os
+import time
+
 
 class AuthenticateMural:
+    """
+    - generates the auth URL
+    - exchanges the callback code for a token
+    - refreshes tokens when they expire
+    """
+
     def __init__(self):
+        # Required OAuth config (must exist in .env)
         self.client_id = os.environ["CLIENT_ID"]
         self.client_secret = os.environ["CLIENT_SECRET"]
         self.redirect_uri = os.environ["REDIRECT_URI"]
         self.auth_base_url = os.environ["AUTHORIZATION_BASE_URL"]
         self.token_url = os.environ["TOKEN_URL"]
 
+        # Permissions requested from Mural
         self.scopes = [
-            "murals:read", "murals:write", "rooms:read", "rooms:write",
-            "templates:read", "templates:write", "workspaces:read",
-            "users:read", "workspaces:write", "identity:read",
+            "murals:read", "murals:write",
+            "rooms:read", "rooms:write",
+            "templates:read", "templates:write",
+            "workspaces:read", "workspaces:write",
+            "users:read", "identity:read",
         ]
 
     def get_authorization_url(self):
+        """
+        Creates the URL the user must open to authenticate with Mural.
+        """
         mural = OAuth2Session(
             self.client_id,
             scope=self.scopes,
             redirect_uri=self.redirect_uri,
         )
+
         authorization_url, state = mural.authorization_url(self.auth_base_url)
         return authorization_url, state
 
-    def fetch_token(self, authorization_response: str):
+    def fetch_token(self, authorization_response: str) -> dict:
+        """
+        Exchanges the OAuth callback URL for an access token.
+        """
         mural = OAuth2Session(
             self.client_id,
             redirect_uri=self.redirect_uri,
         )
+
         token = mural.fetch_token(
             self.token_url,
             client_secret=self.client_secret,
             authorization_response=authorization_response,
         )
+
         return token
+
+    def get_valid_access_token(self, stored_token: dict) -> dict:
+        """
+        Returns a valid access token.
+        If expired, attempts to refresh it.
+        Raises RuntimeError if re-auth is required.
+        """
+
+        # Token still valid
+        if stored_token.get("expires_at", 0) > time.time():
+            return stored_token
+
+        # Cannot refresh without a refresh token
+        if "refresh_token" not in stored_token:
+            raise RuntimeError("REAUTH_REQUIRED")
+
+        mural = OAuth2Session(
+            self.client_id,
+            token=stored_token,
+            redirect_uri=self.redirect_uri,
+        )
+
+        try:
+            new_token = mural.refresh_token(
+                self.token_url,
+                client_id=self.client_id,
+                client_secret=self.client_secret,
+            )
+            return new_token
+        except Exception:
+            raise RuntimeError("REAUTH_REQUIRED")

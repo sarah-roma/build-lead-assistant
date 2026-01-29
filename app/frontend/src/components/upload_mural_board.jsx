@@ -40,10 +40,18 @@ export default function UploadMuralBoard() {
     const data = await res.json();
 
     // OAuth required
-    if (res.status === 401 && data.authorization_url) {
-      window.open(data.authorization_url, "_blank");
-      throw new Error("AUTH_REQUIRED");
-    }
+  if (res.status === 401 && data.authorization_url) {
+    const authWindow = window.open(data.authorization_url, "_blank");
+
+    const timer = setInterval(() => {
+      if (authWindow.closed) {
+        clearInterval(timer);
+        uploadMural(); // retry automatically
+      }
+    }, 500);
+
+    return;
+  }
 
     if (!res.ok || data.status !== "success") {
       throw new Error(data.detail || "Upload failed");

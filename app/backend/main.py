@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 from typing import Optional, List, Annotated
 import logging
 from enum import Enum
+import time
 from contextlib import asynccontextmanager
 
 from utils.milvus_setup import MilvusSetup
@@ -137,71 +138,76 @@ async def create_collection(collection_name: str):
 #     return token
 
 
-def get_mural_token_optional() -> Optional[str]:
-    return getattr(app.state, "mural_token", None)
-
-
-def get_mural_token() -> str:
-    token = getattr(app.state, "mural_token", None)
-    if not token:
-        raise HTTPException(
-            status_code=401,
-            detail="Mural not authenticated"
-        )
-    return token
-
-def get_mural_token_optional() -> Optional[str]:
-    return getattr(app.state, "mural_token", None)
-
-
-def get_mural_token() -> str:
-    token = getattr(app.state, "mural_token", None)
-    if not token:
-        raise HTTPException(
-            status_code=401,
-            detail="Mural not authenticated"
-        )
-    return token
+from fastapi import HTTPException, Request
+from fastapi.responses import JSONResponse, HTMLResponse
+from utils.ingestion.mural_authentication import AuthenticateMural
+import logging
 
 
 @app.get("/oauth/mural/callback", tags=["oauth"])
 def mural_oauth_callback(request: Request):
+    """
+    OAuth redirect endpoint called by Mural after user approves access.
+    """
+
     auth = AuthenticateMural()
 
-    # Optional: validate state
-    expected_state = getattr(app.state, "mural_oauth_state", None)
-    received_state = request.query_params.get("state")
-
-    if expected_state and received_state != expected_state:
-        raise HTTPException(status_code=400, detail="Invalid OAuth state")
-
+    # Exchange code for token
     token_data = auth.fetch_token(str(request.url))
-    app.state.mural_token = token_data["access_token"]
 
+    # Store the FULL token dict (access + refresh + expiry)
+    app.state.mural_token = token_data
+
+    # Close the popup window nicely
     return HTMLResponse("""
     <html>
       <body>
-        <script>
-          window.close();
-        </script>
+        <script>window.close();</script>
         <p>Mural authentication complete. You may close this window.</p>
       </body>
     </html>
     """)
 
 
-# Uploading Mural widgets
-# Can I automatically close the authentication window?
 @app.get("/Upload a Mural Board/", tags=["info-ingestion"])
 async def upload_mural_board(
     collection_name: str,
     url: str,
-    mural_token: Optional[str] = Depends(get_mural_token_optional),
 ):
-    # 🚫 Not authenticated → tell frontend how to authenticate
-    if not mural_token:
-        auth = AuthenticateMural()
-        authorization_url, _ = auth.get_authorization_url()
+    auth = AuthenticateMural()
+
+    # Try to get token immediately
+    token = getattr(app.state, "mural_token", None)
+
+    # If token missing, give OAuth a short chance to complete
+    if not token:
+        for _ in range(6):  # ~3 seconds total
+            time.sleep(0.5)
+            token = getattr(app.state, "mural_token", None)
+            if token:
+                break
+
+    # Still no token → start OAuth
+    if not token:
+        authorization_url, state = auth.get_authorization_url()
+        app.state.mural_oauth_state = state
+
+        return JSONResponse(
+            status_code=401,
+            content={
+                "error": "Mural authentication required",
+                "authorization_url": authorization_url,
+            },
+        )
+
+    # Ensure token is valid / refreshed
+    try:
+        token = auth.get_valid_access_token(token)
+        app.state.mural_token = token
+        access_token = token["access_token"]
+    except Exception:
+        authorization_url, state = auth.get_authorization_url()
+        app.state.mural_oauth_state = state
 
         return JSONResponse(
             status_code=401,
@@ -212,20 +218,20 @@ async def upload_mural_board(
         )
 
     try:
-        widget_text = get_widget_text(url, mural_token)
+        # Call Mural API using valid token
+        widget_text = get_widget_text(url, access_token)
         logging.info(f"Extracted text from mural '{url}'")
 
-        mural_chunks = {}
-        chunks_list = []
-
+        chunks = []
         for widget in widget_text:
-            chunks_list.extend(IngestionPipeline.chunk_text(widget))
+            chunks.extend(IngestionPipeline.chunk_text(widget))
 
-        mural_chunks[extract_mural_id(url)] = chunks_list
+        mural_id = extract_mural_id(url)
+        mural_chunks = {mural_id: chunks}
 
-        file_embeddings = IngestionPipeline.embed_chunks(mural_chunks)
+        embeddings = IngestionPipeline.embed_chunks(mural_chunks)
         payload = IngestionPipeline.create_milvus_payload(
-            file_embeddings, mural_chunks
+            embeddings, mural_chunks
         )
 
         client = milvus_setup.get_milvus_client()
@@ -241,18 +247,12 @@ async def upload_mural_board(
         return {
             "status": "success",
             "title": "Mural board ingested",
-            "message": (
-                f"Your Mural board input has been successfully saved to the "
-                f"'{collection_name}' collection."
-            ),
+            "message": f"Mural board saved to '{collection_name}'",
             "details": {
-                "content_type": "mural",
-                "chunks_created": len(chunks_list),
+                "chunks_created": len(chunks),
             },
         }
 
-    except HTTPException:
-        raise
     except Exception as e:
         logging.exception("Mural upload failed")
         raise HTTPException(status_code=500, detail=str(e))
