@@ -2,14 +2,12 @@
 # Uses the official Milvus base image and runs standalone mode.
 FROM milvusdb/milvus:latest
 
-# Runtime environment values passed at deploy time
-
-# Ensure data directories exist
+# Ensure data directories exist with hardcoded paths
 USER root
-RUN mkdir -p ${MILVUS_WAL_DIR} ${MILVUS_DATA_DIR} \
+RUN mkdir -p /var/lib/milvus/wal /var/lib/milvus/data \
     && chown -R milvus:milvus /var/lib/milvus || true
 
-EXPOSE ${MILVUS_PORT} ${MILVUS_HTTP_PORT}
+EXPOSE 19530 19121
 
 USER milvus
 
