@@ -14,5 +14,5 @@ EXPOSE 2379
 HEALTHCHECK --interval=30s --timeout=20s --retries=3 \
   CMD ETCDCTL_API=3 etcdctl endpoint health || exit 1
 
-# Start etcd with the same flags used in docker-compose
-CMD ["etcd", "-advertise-client-urls=http://127.0.0.1:2379", "-listen-client-urls", "http://0.0.0.0:2379", "--data-dir", "/etcd"]
+# Start etcd; data-dir is set via ETCD_DATA_DIR environment variable (from .env)
+CMD ["etcd", "-advertise-client-urls=http://127.0.0.1:2379", "-listen-client-urls", "http://0.0.0.0:2379"]
