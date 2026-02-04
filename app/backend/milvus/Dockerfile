@@ -9,8 +9,6 @@ RUN mkdir -p /var/lib/milvus/wal /var/lib/milvus/data \
 
 EXPOSE 19530 19121
 
-USER milvus
-
 # Start Milvus in standalone mode. Environment variables can be
 # supplied by the Code Engine deployment to override defaults.
 CMD ["milvus", "run", "standalone"]
