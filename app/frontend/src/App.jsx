@@ -199,6 +199,9 @@ const SIDE_NAV_WIDTH = 256;
 
 function App() {
   const [activeTab, setActiveTab] = useState("createCollection");
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
 
   const tabs = [
     { id: "createCollection", label: "Create Collection" },
@@ -210,9 +213,76 @@ function App() {
     { id: "askQuestion", label: "Ask a Question" },
   ];
 
+  const handleLogin = () => {
+    if (username === "app_user" && password === "synopticproject?") {
+      setIsAuthenticated(true);
+    } else {
+      alert("Invalid credentials");
+    }
+  };
+
   return (
     <>
-            {/* Header */}
+      {/* AUTH BLOCKING OVERLAY */}
+      {!isAuthenticated && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            backgroundColor: "rgba(0, 0, 0, 0.85)",
+            zIndex: 10000,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <div
+            style={{
+              background: "white",
+              padding: "2rem",
+              borderRadius: "8px",
+              width: "100%",
+              maxWidth: "400px",
+              textAlign: "center",
+            }}
+          >
+            <h2 style={{ marginBottom: "1rem" }}>Restricted Access</h2>
+
+            <input
+              type="text"
+              placeholder="Username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleLogin()}
+              style={{ width: "100%", padding: "0.5rem", marginBottom: "1rem" }}
+              autoFocus
+            />
+
+            <input
+              type="password"
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleLogin()}
+              style={{ width: "100%", padding: "0.5rem", marginBottom: "1rem" }}
+            />
+
+            <button
+              style={{
+                width: "100%",
+                padding: "0.75rem",
+                fontWeight: "bold",
+                cursor: "pointer",
+              }}
+              onClick={handleLogin}
+            >
+              Enter
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Header */}
       <Header aria-label="My Dashboard">
         <HeaderName href="#" prefix="My">
           Dashboard
@@ -222,13 +292,13 @@ function App() {
         <div
           style={{
             width: "100%",
-            backgroundColor: "#da1e28", // Carbon danger red
+            backgroundColor: "#da1e28",
             color: "white",
             textAlign: "center",
             fontWeight: "bold",
             padding: "0.5rem",
             position: "absolute",
-            top: "3rem", // directly below header
+            top: "3rem",
             left: 0,
             zIndex: 9999,
           }}
@@ -243,7 +313,7 @@ function App() {
         isFixedNav
         expanded
         style={{
-          top: "3rem", // header height
+          top: "3rem",
           height: "calc(100vh - 3rem)",
         }}
       >
@@ -264,7 +334,7 @@ function App() {
         </SideNavItems>
       </SideNav>
 
-      {/* Main content area */}
+      {/* Main content */}
       <main
         style={{
           marginLeft: SIDE_NAV_WIDTH,
