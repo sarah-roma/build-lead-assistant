@@ -212,11 +212,29 @@ function App() {
 
   return (
     <>
-      {/* Header */}
+            {/* Header */}
       <Header aria-label="My Dashboard">
         <HeaderName href="#" prefix="My">
           Dashboard
         </HeaderName>
+
+        {/* WARNING BANNER */}
+        <div
+          style={{
+            width: "100%",
+            backgroundColor: "#da1e28", // Carbon danger red
+            color: "white",
+            textAlign: "center",
+            fontWeight: "bold",
+            padding: "0.5rem",
+            position: "absolute",
+            top: "3rem", // directly below header
+            left: 0,
+            zIndex: 9999,
+          }}
+        >
+          Please do not enter any sensitive information, including client data
+        </div>
       </Header>
 
       {/* Fixed SideNav */}
