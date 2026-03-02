@@ -20,7 +20,7 @@ The Build Lead Assistant is a web application accessible via a browser.
 
 The following screen should appear:
 
-<login
+![login](readme-imgs/login.png)
 
 2. **Enter credentials:**
 
@@ -30,12 +30,13 @@ Password: `synopticproject?`
 >If you want to use this application to understand about build lead processes, generate templates, and access information on projects and build leading, please skip straight to step 6.
 
 This will take you to the homescreen, where you can create a collection.
- <homescreen
+
+![homescreen](readme-imgs/homescreen.png)
  
 3. **Enter your collection name in the text box and click create.**
 > Collection names can only contain numbers, letters and underscores
 
-<create collection
+![create collection](readme-imgs/createcollection.png)
 
 You can now enter information into your collection from various sources:
 * Text
@@ -50,7 +51,9 @@ For all methods, make sure to chose the correct collection to upload information
  >Once information has been uploaded to a collection, it cannot be removed
 
 5. **Enter the information via the user interface.**
-<two lots of text input scs
+
+![select collection](readme-imgs/selectcollection.png)
+![upload text](readme-imgs/uploadtext.png)
 
 * Text input could be used to enter FAQs, or copied text from unsupported files/webpages.
 * Depending on the size of the webpage and internet speeds, URL upload may take some time - please be patient!
@@ -60,10 +63,10 @@ For all methods, make sure to chose the correct collection to upload information
 
 Once sufficient information has been uploaded to your collection, navigate to the "Ask a Question" page using the sidebar.
 
-6. **Select the collection you want to query, then type in a question.**
+1. **Select the collection you want to query, then type in a question.**
 > The more information a collection contains, the more accurate and detailed an answer it will be able to provide.
 
-<image
+![ask question](readme-imgs/askq.png)
 
 If you are using the assistant to find resources and information on build leading, query the prepopulated `build_lead_information` collection.
 
@@ -71,17 +74,21 @@ If you are using the assistant to find resources and information on build leadin
 This web application comprises of a Python FastAPI backend, a Vite/React frontend, and a Milvus vector database.
 
 The structure of the build-lead-application file is as follows:
-<img
+
+![tree](readme-imgs/tree.png)
 
 
 ### Architecture
 The build lead application is currently hosted on an IBM TechZone VSI running a RHEL9 environment. It uses microservices architecture, with five containers (backend, frontend, milvus-standalone, milvus-minio, milvus-etcd) deployed using podman, and orchestrated through a docker-compose file.
-<container diagram img
+
+![container diagram](readme-imgs/container.png)
 
 ### AI Component
 
 Building on the well known RAG (retrieval-augmented-generation) technology, this application uses Corrective-RAG to perform information retrieval and answer generation.
-<img
+
+![C-RAG flow](readme-imgs/crag.png)
+
 During ingestion, information is chunked, then embedded into the Milvus vector store database. When the user asks a question, the C-RAG pipeline is initiated:
 1. **Question rewriting** – LLM reformulates the question for optimal retrieval
 2. **Vector embedding** – Question is embedded using a local sentence-transformer model
