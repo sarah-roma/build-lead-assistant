@@ -292,16 +292,6 @@ function App() {
               Enter
             </button>
           </div>
-          {/* ensure login overlay doesn't hide the footer link */}
-          <div style={{
-            position: "relative",
-            marginTop: "1rem",
-            fontSize: "0.85rem",
-          }}>
-            <a href="https://sarah-roma.github.io/build-lead-assistant/" target="_blank" rel="noopener noreferrer">
-              Please visit the following site for tutorials and further information
-            </a>
-          </div>
         </div>
       )}
 
