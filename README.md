@@ -13,7 +13,7 @@ To learn more about using the application, see [User Guide](#user-guide). To lea
 > The following steps and screenshots were recreated using the Firefox browser.
 
 The Build Lead Assistant is a web application accessible via a browser.
-1. **Type the following into your URL:**
+1) **Type the following into your URL:**
 
 `http://141.125.108.191:5173/`
 > In its current proof-of-concept state, the application uses the less secure http rather than https. Other precautions have been taken to mitigate the risks that come with this.
@@ -22,7 +22,7 @@ The following screen should appear:
 
 ![login](readme-imgs/login.png)
 
-2. **Enter credentials:**
+2) **Enter credentials:**
 
 Username: `app_user`
 Password: `synopticproject?`
@@ -33,7 +33,7 @@ This will take you to the homescreen, where you can create a collection.
 
 ![homescreen](readme-imgs/homescreen.png)
  
-3. **Enter your collection name in the text box and click create.**
+3) **Enter your collection name in the text box and click create:**
 > Collection names can only contain numbers, letters and underscores
 
 ![create collection](readme-imgs/createcollection.png)
@@ -45,12 +45,12 @@ You can now enter information into your collection from various sources:
 * Workshop information
 * Files (PDF, TXT, DOCX, PPTX)
 
-4. **Use the sidebar to navigate to your chosen upload method.**
+4) **Use the sidebar to navigate to your chosen upload method:**
 
 For all methods, make sure to chose the correct collection to upload information to.
  >Once information has been uploaded to a collection, it cannot be removed
 
-5. **Enter the information via the user interface.**
+5) **Enter the information via the user interface:**
 
 ![select collection](readme-imgs/selectcollection.png)
 ![upload text](readme-imgs/uploadtext.png)
@@ -63,7 +63,7 @@ For all methods, make sure to chose the correct collection to upload information
 
 Once sufficient information has been uploaded to your collection, navigate to the "Ask a Question" page using the sidebar.
 
-1. **Select the collection you want to query, then type in a question.**
+6) **Select the collection you want to query, then type in a question:**
 > The more information a collection contains, the more accurate and detailed an answer it will be able to provide.
 
 ![ask question](readme-imgs/askq.png)
