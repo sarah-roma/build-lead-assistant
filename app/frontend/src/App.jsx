@@ -298,7 +298,7 @@ function App() {
             marginTop: "1rem",
             fontSize: "0.85rem",
           }}>
-            <a href="https://sarah-roma.github.io/" target="_blank" rel="noopener noreferrer">
+            <a href="https://sarah-roma.github.io/build-lead-assistant/" target="_blank" rel="noopener noreferrer">
               Please visit the following site for tutorials and further information
             </a>
           </div>
@@ -379,8 +379,8 @@ function App() {
       {/* persistent footer that stays at bottom of viewport */}
       <div style={FOOTER_STYLE}>
         Please visit the following site for tutorials and further information:&nbsp;
-        <a href="https://sarah-roma.github.io/" target="_blank" rel="noopener noreferrer">
-          https://sarah-roma.github.io/
+        <a href="https://sarah-roma.github.io/build-lead-assistant/" target="_blank" rel="noopener noreferrer">
+          https://sarah-roma.github.io/build-lead-assistant/
         </a>
       </div>
     </>
