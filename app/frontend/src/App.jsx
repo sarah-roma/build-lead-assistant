@@ -197,6 +197,19 @@ import AskQuestion from "./components/ask_question";
 
 const SIDE_NAV_WIDTH = 256;
 
+// footer styling used throughout application (including login overlay)
+const FOOTER_STYLE = {
+  position: "fixed",
+  bottom: 0,
+  left: 0,
+  width: "100%",
+  backgroundColor: "#fafafa",
+  textAlign: "center",
+  padding: "0.5rem",
+  fontSize: "0.85rem",
+  zIndex: 10001, // higher than login overlay so it is always visible
+};
+
 function App() {
   const [activeTab, setActiveTab] = useState("createCollection");
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -279,6 +292,16 @@ function App() {
               Enter
             </button>
           </div>
+          {/* ensure login overlay doesn't hide the footer link */}
+          <div style={{
+            position: "relative",
+            marginTop: "1rem",
+            fontSize: "0.85rem",
+          }}>
+            <a href="https://sarah-roma.github.io/" target="_blank" rel="noopener noreferrer">
+              Please visit the following site for tutorials and further information
+            </a>
+          </div>
         </div>
       )}
 
@@ -352,6 +375,14 @@ function App() {
           {activeTab === "askQuestion" && <AskQuestion />}
         </Content>
       </main>
+
+      {/* persistent footer that stays at bottom of viewport */}
+      <div style={FOOTER_STYLE}>
+        Please visit the following site for tutorials and further information:&nbsp;
+        <a href="https://sarah-roma.github.io/" target="_blank" rel="noopener noreferrer">
+          https://sarah-roma.github.io/
+        </a>
+      </div>
     </>
   );
 }
