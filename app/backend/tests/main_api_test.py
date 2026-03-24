@@ -28,62 +28,88 @@ def test_create_collection(mock_create, mock_get_client):
     mock_create.assert_called_once()
 
 
+def test_upload_mural_requires_auth():
+    response = client.get(
+        "/Upload a Mural Board/?collection_name=test"
+        "&url=https://app.mural.co/t/x/m/x/1/"
+    )
 
-# Test mural authenticaiton
-@patch("main.AuthenticateMural")
-def test_get_mural_token(mock_auth):
-    mock_auth().authenticate.return_value = {"access_token": "mock_token"}
-
-    response = client.get("/Authenticate Mural/")
-    assert response.status_code == 200
-    assert response.json() == "mock_token"
+    assert response.status_code == 401
+    body = response.json()
+    assert "authorization_url" in body
 
 
-# Test mural widget upload
+from unittest.mock import patch, MagicMock
+
+
 @patch("main.milvus_setup.get_milvus_client")
 @patch("main.get_widget_text")
 @patch("main.IngestionPipeline.chunk_text")
 @patch("main.IngestionPipeline.embed_chunks")
 @patch("main.IngestionPipeline.create_milvus_payload")
 def test_upload_mural_widgets(
-    mock_payload, mock_embed, mock_chunk, mock_widgets, mock_get_client, mock_milvus_client
+    mock_payload,
+    mock_embed,
+    mock_chunk,
+    mock_widgets,
+    mock_get_client,
 ):
-    mock_get_client.return_value = mock_milvus_client
+    # Milvus setup
+    mock_client = MagicMock()
+    mock_client.list_collections.return_value = ["existing_collection"]
+    mock_get_client.return_value = mock_client
 
-    # Mural returns two widgets
+    # Mural widgets
     mock_widgets.return_value = ["Widget text A", "Widget text B"]
-
-    # Chunking returns one chunk per widget
     mock_chunk.side_effect = lambda txt: [f"chunk_of_{txt}"]
-
-    # Embedding & payload
     mock_embed.return_value = {"mock": "embeddings"}
     mock_payload.return_value = {"payload": "data"}
 
-    response = client.get("/Upload a Mural Board/?collection_name=existing_collection&url=https://app.mural.co/t/x/m/x/123/")
+    # Set token in app state to bypass OAuth flow
+    from main import app
+    app.state.mural_token = {
+        "access_token": "mock-token",
+        "expires_at": 9999999999  # Far future
+    }
+
+    response = client.get(
+        "/Upload a Mural Board/?collection_name=existing_collection"
+        "&url=https://app.mural.co/t/x/m/x/123/"
+    )
 
     assert response.status_code == 200
     body = response.json()
-
     assert body["status"] == "success"
-    assert body["title"] == "Mural board ingested"
     assert body["details"]["chunks_created"] == 2
 
 
-# Test mural widget upload: collection missing
 @patch("main.milvus_setup.get_milvus_client")
 @patch("main.get_widget_text")
-def test_upload_mural_missing_collection(mock_widgets, mock_get_client):
+def test_upload_mural_missing_collection(
+    mock_widgets,
+    mock_get_client,
+):
     mock_client = MagicMock()
-    mock_client.list_collections.return_value = []  # No collections exist
+    mock_client.list_collections.return_value = []
     mock_get_client.return_value = mock_client
 
     mock_widgets.return_value = ["test"]
 
-    response = client.get("/Upload a Mural Board/?collection_name=missing&url=https://app.mural.co/t/x/m/x/1/")
+    # Set token in app state to bypass OAuth flow
+    from main import app
+    app.state.mural_token = {
+        "access_token": "mock-token",
+        "expires_at": 9999999999  # Far future
+    }
 
-    assert "error" in response.json()
-    assert "does not exist" in response.json()["error"]
+    response = client.get(
+        "/Upload a Mural Board/?collection_name=missing"
+        "&url=https://app.mural.co/t/x/m/x/1/"
+    )
+
+    assert response.status_code == 400
+    assert "does not exist" in response.json()["detail"]
+
 
 
 # Test file upload

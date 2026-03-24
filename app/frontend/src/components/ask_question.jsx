@@ -42,7 +42,7 @@ export default function AskQuestion() {
 
     try {
       const res = await fetch(
-        `http://localhost:8000/Ask a Question/?collection_name=${encodeURIComponent(
+        `http://141.125.108.191:8001/Ask a Question/?collection_name=${encodeURIComponent(
           collectionName
         )}&question=${encodeURIComponent(question)}`,
         { method: "POST" }

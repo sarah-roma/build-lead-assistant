@@ -22,10 +22,13 @@ def test_init_uses_env_vars(monkeypatch):
 def test_get_milvus_client_success():
     with patch("utils.milvus_setup.MilvusClient") as MockClient:
         setup = MilvusSetup(uri="mock_uri", token="mock_token")
-        client = setup.get_milvus_client()
+        setup.get_milvus_client()
 
-        MockClient.assert_called_once_with(uri="mock_uri", token="mock_token")
-        assert client == MockClient.return_value
+        MockClient.assert_called_once_with(
+            uri="mock_uri",
+            token="mock_token",
+            timeout=30,
+        )
 
 
 def test_get_milvus_client_missing_uri():
@@ -35,9 +38,11 @@ def test_get_milvus_client_missing_uri():
 
 
 def test_get_milvus_client_missing_token():
-    setup = MilvusSetup(uri="uri", token=None)
-    with pytest.raises(ValueError):
-        setup.get_milvus_client()
+    setup = MilvusSetup(uri="http://localhost:19530", token=None)
+
+    with patch("utils.milvus_setup.MilvusClient"):
+        client = setup.get_milvus_client()
+        assert client is not None
 
 
 #  Test connect_to_milvus

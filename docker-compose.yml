@@ -11,16 +11,16 @@ services:
       - ETCD_SNAPSHOT_COUNT=50000
     volumes:
       - ${DOCKER_VOLUME_DIRECTORY:-.}/volumes/etcd:/etcd
-    command: etcd -advertise-client-urls=http://127.0.0.1:2379 -listen-client-urls http://0.0.0.0:2379 --data-dir /etcd
+    command: etcd -advertise-client-urls=http://etcd:2379 -listen-client-urls http://0.0.0.0:2379 --data-dir /etcd
     healthcheck:
-      test: ["CMD", "etcdctl", "endpoint", "health"]
+      test: ["CMD", "sh", "-c", "ETCDCTL_API=3 etcdctl endpoint health"]
       interval: 30s
       timeout: 20s
       retries: 3
 
   minio:
     container_name: milvus-minio
-    image: minio/minio:RELEASE.2023-03-20T20-16-18Z
+    image: docker.io/minio/minio:RELEASE.2023-03-20T20-16-18Z
     environment:
       MINIO_ACCESS_KEY: minioadmin
       MINIO_SECRET_KEY: minioadmin
@@ -31,14 +31,14 @@ services:
       - ${DOCKER_VOLUME_DIRECTORY:-.}/volumes/minio:/minio_data
     command: minio server /minio_data --console-address ":9001"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      test: ["CMD", "curl", "-f", "http://minio:9000/minio/health/live"]
       interval: 30s
       timeout: 20s
       retries: 3
 
   standalone:
     container_name: milvus-standalone
-    image: milvusdb/milvus:v2.5.6
+    image: docker.io/milvusdb/milvus:v2.5.6
     command: ["milvus", "run", "standalone"]
     security_opt:
     - seccomp:unconfined
@@ -59,6 +59,40 @@ services:
     depends_on:
       - "etcd"
       - "minio"
+
+  backend:
+    container_name: test-1-backend
+    build:
+      context: ./app/backend
+      dockerfile: Dockerfile
+    ports:
+      - "8001:8001"
+      - "8081:8081"
+    env_file:
+      - .env
+    environment:
+      - MILVUS_HOST=milvus-standalone
+      - MILVUS_PORT=19530
+    volumes:
+      - ./app/backend:/backend
+    depends_on:
+      - "standalone"
+      - "minio"
+
+  frontend:
+    container_name: test-1-frontend
+    build:
+      context: ./app/frontend
+      dockerfile: Dockerfile
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_URL=http://backend:8001
+    volumes:
+      - ./app/frontend:/frontend
+      - /frontend/node_modules
+    depends_on:
+      - "backend"
 
 networks:
   default:

@@ -1,7 +1,7 @@
 from pymilvus import connections, db, MilvusClient, DataType
 import os
 import logging
-
+import time
 
 _SENTINEL = object()
 
@@ -38,18 +38,53 @@ class MilvusSetup:
 
         print(f"Current databases:{db.list_database()}")
 
-    def get_milvus_client(self) -> MilvusClient:
-        if self.uri is None:
-            raise ValueError("Milvus URI is not set.")
-        if self.token is None:
-            raise ValueError("Milvus token is not set.")
+    # def get_milvus_client(self) -> MilvusClient:
+    #     if self.uri is None:
+    #         raise ValueError("Milvus URI is not set.")
+    #     if self.token is None:
+    #         raise ValueError("Milvus token is not set.")
 
-        client = MilvusClient(uri=self.uri, token=self.token)
-        print(f"Client object: {client}")
-        return client
+    #     client = MilvusClient(uri=self.uri, token=self.token)
+    #     print(f"Client object: {client}")
+    #     return client
+
+    # def get_milvus_client(self) -> MilvusClient:
+    #     return MilvusClient(
+    #         host=self.host,
+    #         port=self.port,
+    #     )
+    
+    def get_milvus_client(self):
+        if not self.uri:
+            raise ValueError("MILVUS_URI is not set")
+
+        return MilvusClient(
+            uri=self.uri,
+            token=self.token,
+            timeout=30
+        )
+
+
+    def connect_with_retry(self, retries=30, delay=3):
+        last_error = None
+        for attempt in range(1, retries + 1):
+            try:
+                connections.connect(
+                    host=self.host,
+                    port=self.port,
+                )
+                logging.info("Connected to Milvus successfully")
+                return
+            except Exception as e:
+                last_error = e
+                logging.warning(
+                    f"Milvus not ready (attempt {attempt}/{retries}), retrying in {delay}s"
+                )
+                time.sleep(delay)
+
+        raise RuntimeError(f"Milvus never became ready: {last_error}")
 
     def connect_to_milvus(self):
-
         logging.info(f"Connecting to Milvus at {self.host}:{self.port}")
         try:
             conn = connections.connect(host=self.host, port=self.port)

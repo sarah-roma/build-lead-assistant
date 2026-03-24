@@ -49,7 +49,7 @@ export default function UploadText() {
 
     try {
       const res = await fetch(
-        `http://localhost:8000/Upload Text/?collection_name=${encodeURIComponent(
+        `http://141.125.108.191:8001/Upload Text/?collection_name=${encodeURIComponent(
           collectionName
         )}&information=${encodeURIComponent(information)}`
       );
