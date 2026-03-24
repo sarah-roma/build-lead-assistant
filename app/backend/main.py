@@ -85,7 +85,7 @@ app = FastAPI(lifespan=lifespan)
 # Allow React frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://141.125.108.191:5173"],  # react dev server
+    allow_origins=["http://localhost:5173", "http://141.125.162.121:5173"],  # react dev server
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

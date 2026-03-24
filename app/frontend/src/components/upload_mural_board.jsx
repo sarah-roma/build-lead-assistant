@@ -9,7 +9,7 @@ import {
   InlineLoading,
 } from "carbon-components-react";
 
-const API_BASE = "http://141.125.108.191:8001";
+const API_BASE = "http://141.125.162.121:8001";
 
 export default function UploadMuralBoard() {
   const [collections, setCollections] = useState([]);

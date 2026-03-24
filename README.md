@@ -16,7 +16,7 @@ The Build Lead Assistant is a web application accessible via a browser.
 
 **Type the following into your URL:**
 
-`http://141.125.108.191:5173/`
+`http://141.125.162.121:5173/`
 > In its current proof-of-concept state, the application uses the less secure http rather than https. Other precautions have been taken to mitigate the risks that come with this.
 
 The following screen should appear:
