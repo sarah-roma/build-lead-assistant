@@ -82,10 +82,10 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
-# Allow React frontend
+# Allow cross-origin calls from frontend clients
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://141.125.162.121:5173"],  # react dev server
+    allow_origins=["*"],  # allow any origin for now; tighten in production as needed
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
