@@ -1,4 +1,5 @@
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8001";
+// Use relative /api paths for dev server proxying, fall back to env var for production
+const API_URL = import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace(/\/$/, '') : "/api";
 
 export const fetchCollections = async (signal) => {
   try {
