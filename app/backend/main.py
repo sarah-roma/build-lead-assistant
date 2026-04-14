@@ -187,7 +187,7 @@ async def upload_mural_board(
             if token:
                 break
 
-    # Still no token → start OAuth
+    # Still no token = start OAuth
     if not token:
         authorization_url, state = auth.get_authorization_url()
         app.state.mural_oauth_state = state
@@ -200,7 +200,7 @@ async def upload_mural_board(
             },
         )
 
-    # Ensure token is valid / refreshed
+    # Ensure token is valid/refreshed
     try:
         token = auth.get_valid_access_token(token)
         app.state.mural_token = token
@@ -403,7 +403,6 @@ async def upload_text(
 async def upload_workshop_info(
     collection_name: str = Form(...),
     user_input: WorkshopIngestionInput = Depends(workshop_form_dependency),
-    workshop_files: Optional[UploadFile] = File(None),
 ):
     try:
         contextual_sections = []
@@ -433,15 +432,6 @@ async def upload_workshop_info(
                 "Prompt: Provide any Mural board links used during the workshop.\n"
                 f"User Answer: {user_input.mural_url}\n"
             )
-
-        # # 4. File Upload
-        # file_text = None
-        # if workshop_files:
-        #     file_contents = (await workshop_files.read()).decode("utf-8", errors="ignore")
-        #     contextual_sections.append(
-        #         f"Prompt: Uploaded file '{workshop_files.filename}' contents.\n"
-        #         f"User Answer:\n{file_contents}\n"
-        #     )
 
         # Combine
         contextual_text = "\n".join(contextual_sections)

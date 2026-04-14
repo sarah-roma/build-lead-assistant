@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { fetchCollections } from "../utils";
+import { fetchCollections, getApiUrl } from "../utils";
 import {
   TextArea,
   Button,
@@ -17,12 +17,23 @@ export default function UploadText() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    const abortController = new AbortController();
+    let isMounted = true;
+
     const loadCollections = async () => {
-      const cols = await fetchCollections();
-      setCollections(cols);
-      if (cols.length > 0) setCollectionName(cols[0]);
+      const cols = await fetchCollections(abortController.signal);
+      if (isMounted) {
+        setCollections(cols);
+        if (cols.length > 0) setCollectionName(cols[0]);
+      }
     };
+
     loadCollections();
+
+    return () => {
+      isMounted = false;
+      abortController.abort();
+    };
   }, []);
 
   const uploadText = async () => {
@@ -44,14 +55,18 @@ export default function UploadText() {
       return;
     }
 
-    setLoading(true); // <-- start loading
+    setLoading(true);
     setNotification(null);
 
+    const abortController = new AbortController();
+
     try {
+      const apiUrl = getApiUrl();
       const res = await fetch(
-        `http://141.125.162.121:8001/Upload Text/?collection_name=${encodeURIComponent(
+        `${apiUrl}/Upload Text/?collection_name=${encodeURIComponent(
           collectionName
-        )}&information=${encodeURIComponent(information)}`
+        )}&information=${encodeURIComponent(information)}`,
+        { signal: abortController.signal }
       );
 
       const data = await res.json();
@@ -66,15 +81,16 @@ export default function UploadText() {
         subtitle: data.message,
       });
 
-      // Optional UX improvement
       setInformation("");
     } catch (err) {
-      console.error("UploadText failed:", err);
-      setNotification({
-        kind: "error",
-        title: "Upload failed",
-        subtitle: "Something went wrong while uploading your text.",
-      });
+      if (err.name !== "AbortError") {
+        console.error("UploadText failed:", err);
+        setNotification({
+          kind: "error",
+          title: "Upload failed",
+          subtitle: "Something went wrong while uploading your text.",
+        });
+      }
     } finally {
       setLoading(false); // <-- stop loading
     }

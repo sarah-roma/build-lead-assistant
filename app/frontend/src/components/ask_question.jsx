@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { fetchCollections } from "../utils";
+import { fetchCollections, getApiUrl } from "../utils";
 import {
   Button,
   TextInput,
@@ -18,12 +18,23 @@ export default function AskQuestion() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    const abortController = new AbortController();
+    let isMounted = true;
+
     const loadCollections = async () => {
-      const cols = await fetchCollections();
-      setCollections(cols);
-      if (cols.length > 0) setCollectionName(cols[0]);
+      const cols = await fetchCollections(abortController.signal);
+      if (isMounted) {
+        setCollections(cols);
+        if (cols.length > 0) setCollectionName(cols[0]);
+      }
     };
+
     loadCollections();
+
+    return () => {
+      isMounted = false;
+      abortController.abort();
+    };
   }, []);
 
   const askQuestion = async () => {
@@ -40,12 +51,18 @@ export default function AskQuestion() {
     setAnswer("");
     setNotification(null);
 
+    const abortController = new AbortController();
+
     try {
+      const apiUrl = getApiUrl();
       const res = await fetch(
-        `http://141.125.162.121:8001/Ask a Question/?collection_name=${encodeURIComponent(
+        `${apiUrl}/Ask a Question/?collection_name=${encodeURIComponent(
           collectionName
         )}&question=${encodeURIComponent(question)}`,
-        { method: "POST" }
+        {
+          method: "POST",
+          signal: abortController.signal,
+        }
       );
 
       const data = await res.json();
@@ -55,15 +72,16 @@ export default function AskQuestion() {
       }
 
       setAnswer(data.answer);
-
     } catch (err) {
-      console.error("AskQuestion failed:", err);
-      setNotification({
-        kind: "error",
-        title: "Unable to answer question",
-        subtitle:
-          "Something went wrong while retrieving an answer. Please try again.",
-      });
+      if (err.name !== "AbortError") {
+        console.error("AskQuestion failed:", err);
+        setNotification({
+          kind: "error",
+          title: "Unable to answer question",
+          subtitle:
+            "Something went wrong while retrieving an answer. Please try again.",
+        });
+      }
     } finally {
       setLoading(false);
     }

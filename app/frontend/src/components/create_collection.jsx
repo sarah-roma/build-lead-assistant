@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { getApiUrl } from "../utils";
 import { TextInput, Button, InlineNotification, InlineLoading } from "carbon-components-react";
 
 
@@ -16,17 +17,23 @@ export default function CreateCollection() {
     setLoading(true);
     setMessage("");
 
+    const abortController = new AbortController();
+
     try {
-      const res = await fetch(`http://141.125.162.121:8001/Create a Collection/?collection_name=${collectionName}`, {
+      const apiUrl = getApiUrl();
+      const res = await fetch(`${apiUrl}/Create a Collection/?collection_name=${collectionName}`, {
         method: "POST",
+        signal: abortController.signal,
       });
       const data = await res.json();
       // Prefer a human-readable message from the server, otherwise show
       // the raw JSON for debugging purposes.
       setMessage(data.message || JSON.stringify(data));
     } catch (err) {
+      if (err.name !== "AbortError") {
         console.error("CreateCollection failed:", err);
         setMessage("Network error");
+      }
     } finally {
       setLoading(false);
     }
