@@ -97,7 +97,7 @@ class MilvusSetup:
     def create_milvus_collection(self, client, collection_name: str):
         # build_lead_knowledge
         schema = client.create_schema(
-            auto_id=False,
+            auto_id=True,
             enable_dynamic_field=True,
         )
         schema.add_field(field_name="id", datatype=DataType.INT64, is_primary=True)

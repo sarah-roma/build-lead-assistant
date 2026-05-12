@@ -61,8 +61,8 @@ def test_create_milvus_payload():
     result = IngestionPipeline.create_milvus_payload(embeddings, chunks)
 
     assert len(result) == 2
-    assert result[0]["id"] == 0
-    assert result[1]["id"] == 1
+    assert "id" not in result[0]
+    assert "id" not in result[1]
 
     assert result[0]["vector"] == [0.1, 0.2]
     assert result[0]["text"] == "chunk 1 text"
