@@ -28,20 +28,17 @@ class IngestionPipeline:
 
     def create_milvus_payload(embeddings, all_file_chunks):
         data_payload = []
-        record_id = 0  # Unique identifier
-        
+
         for filename, chunks in all_file_chunks.items():
             logging.debug(f"Processing file '{filename}' for Milvus payload...")
             for chunk, embedding in zip(chunks, embeddings[filename]):  # Correctly pair chunks with embeddings
-                logging.debug(f"Adding payload record {record_id} for file '{filename}'")
+                logging.debug(f"Adding payload for file '{filename}'")
                 data_payload.append(
                     {
-                        "id": record_id,  # Use a unique integer ID
                         "vector": embedding,  # Embedding vector
                         "text": chunk,  # The actual text chunk
                         "filename": filename  # Store filename as metadata
                     }
                 )
-                record_id += 1  # Increment unique ID
         logging.debug(f"Final Milvus payload: {data_payload[:2]}... (total {len(data_payload)})")
         return data_payload
