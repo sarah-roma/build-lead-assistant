@@ -82,10 +82,10 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
-# Allow cross-origin calls from frontend clients
+# Allow React frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # allow any origin for now; tighten in production as needed
+    allow_origins=["http://localhost:5173", "http://141.125.108.191:5173"],  # react dev server
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -187,7 +187,7 @@ async def upload_mural_board(
             if token:
                 break
 
-    # Still no token = start OAuth
+    # Still no token → start OAuth
     if not token:
         authorization_url, state = auth.get_authorization_url()
         app.state.mural_oauth_state = state
@@ -200,7 +200,7 @@ async def upload_mural_board(
             },
         )
 
-    # Ensure token is valid/refreshed
+    # Ensure token is valid / refreshed
     try:
         token = auth.get_valid_access_token(token)
         app.state.mural_token = token
@@ -218,29 +218,31 @@ async def upload_mural_board(
         )
 
     try:
-        # Call Mural API using valid token
-        widget_text = get_widget_text(url, access_token)
-        logging.info(f"Extracted text from mural '{url}'")
-
-        chunks = []
-        for widget in widget_text:
-            chunks.extend(IngestionPipeline.chunk_text(widget))
-
-        mural_id = extract_mural_id(url)
-        mural_chunks = {mural_id: chunks}
-
-        embeddings = IngestionPipeline.embed_chunks(mural_chunks)
-        payload = IngestionPipeline.create_milvus_payload(
-            embeddings, mural_chunks
-        )
-
+        # Check collection existence before doing expensive Mural API calls
+        # and embedding work.
         client = milvus_setup.get_milvus_client()
-
         if collection_name not in client.list_collections():
             raise HTTPException(
                 status_code=400,
                 detail=f"Collection '{collection_name}' does not exist",
             )
+
+        widget_texts = get_widget_text(url, access_token)
+        logging.info(f"Extracted {len(widget_texts)} widget(s) from mural '{url}'")
+        if not widget_texts:
+            raise HTTPException(
+                status_code=400,
+                detail="No text content found on the Mural board",
+            )
+
+        combined = "\n\n".join(widget_texts)
+        chunks = IngestionPipeline.chunk_text(combined)
+
+        mural_id = extract_mural_id(url)
+        mural_chunks = {mural_id: chunks}
+
+        embeddings = IngestionPipeline.embed_chunks(mural_chunks)
+        payload = IngestionPipeline.create_milvus_payload(embeddings, mural_chunks)
 
         client.insert(collection_name, payload)
 
@@ -403,6 +405,7 @@ async def upload_text(
 async def upload_workshop_info(
     collection_name: str = Form(...),
     user_input: WorkshopIngestionInput = Depends(workshop_form_dependency),
+    workshop_files: Optional[UploadFile] = File(None),
 ):
     try:
         contextual_sections = []
@@ -432,6 +435,15 @@ async def upload_workshop_info(
                 "Prompt: Provide any Mural board links used during the workshop.\n"
                 f"User Answer: {user_input.mural_url}\n"
             )
+
+        # # 4. File Upload
+        # file_text = None
+        # if workshop_files:
+        #     file_contents = (await workshop_files.read()).decode("utf-8", errors="ignore")
+        #     contextual_sections.append(
+        #         f"Prompt: Uploaded file '{workshop_files.filename}' contents.\n"
+        #         f"User Answer:\n{file_contents}\n"
+        #     )
 
         # Combine
         contextual_text = "\n".join(contextual_sections)
