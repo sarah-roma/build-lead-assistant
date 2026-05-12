@@ -61,7 +61,8 @@ def test_upload_mural_widgets(
 
     # Mural widgets
     mock_widgets.return_value = ["Widget text A", "Widget text B"]
-    mock_chunk.side_effect = lambda txt: [f"chunk_of_{txt}"]
+    # chunk_text is now called ONCE on the concatenated text, not per widget
+    mock_chunk.return_value = ["c1", "c2"]
     mock_embed.return_value = {"mock": "embeddings"}
     mock_payload.return_value = {"payload": "data"}
 
@@ -81,6 +82,10 @@ def test_upload_mural_widgets(
     body = response.json()
     assert body["status"] == "success"
     assert body["details"]["chunks_created"] == 2
+    # chunk_text should run exactly once on the joined widget text
+    mock_chunk.assert_called_once()
+    assert "Widget text A" in mock_chunk.call_args[0][0]
+    assert "Widget text B" in mock_chunk.call_args[0][0]
 
 
 @patch("main.milvus_setup.get_milvus_client")
