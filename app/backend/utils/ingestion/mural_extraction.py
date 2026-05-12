@@ -8,6 +8,10 @@ from bs4 import BeautifulSoup
 
 MURAL_WIDGETS_URL = "https://app.mural.co/api/public/v1/murals/{mural_id}/widgets"
 
+# Different widget types put their text in different fields — sticky notes use
+# htmlText, shapes use text, title widgets use title, images use caption, etc.
+# Reading only htmlText (as the original code did) silently dropped most of
+# every workshop board's content.
 TEXT_FIELDS = ("title", "htmlText", "text", "caption", "name", "description")
 
 
@@ -54,7 +58,10 @@ def list_mural_widgets(url: str, auth_token: str) -> list[dict]:
 
     endpoint = MURAL_WIDGETS_URL.format(mural_id=mural_id)
     headers = {"Authorization": f"Bearer {auth_token}"}
-    params = {"limit": 1000}
+    # Don't set ?limit= — Mural rejects values outside a narrow range with
+    # LIMIT_INVALID. The default page size is fine; pagination via `next`
+    # still walks the whole board.
+    params: dict = {}
     widgets: list[dict] = []
 
     while True:
@@ -71,7 +78,7 @@ def list_mural_widgets(url: str, auth_token: str) -> list[dict]:
         next_token = payload.get("next") or payload.get("nextToken")
         if not next_token:
             return widgets
-        params = {"limit": 1000, "next": next_token}
+        params = {"next": next_token}
 
 
 def get_widget_text(url: str, auth_token: str) -> list[str]:

@@ -43,7 +43,7 @@ def test_list_mural_widgets_success(mock_get):
     mock_get.assert_called_once_with(
         "https://app.mural.co/api/public/v1/murals/team.123/widgets",
         headers={"Authorization": "Bearer fake-token"},
-        params={"limit": 1000},
+        params={},
         timeout=30,
     )
     assert result == [{"id": "1"}]
