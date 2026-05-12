@@ -38,8 +38,9 @@ def workshop_form_dependency(
     attendee_teams: Optional[List[str]] = Form(None),
     attendee_companies: Optional[List[str]] = Form(None),
 ):
+    """ Build WorkshopIngestionInput from form fields, handling repeatable attendee fields."""
     attendees_list = []
-
+    # Build attendees list from form fields (if provided)
     if attendee_names:
         for idx, name in enumerate(attendee_names):
             attendees_list.append(

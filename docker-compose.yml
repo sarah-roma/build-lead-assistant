@@ -86,8 +86,6 @@ services:
       dockerfile: Dockerfile
     ports:
       - "5173:5173"
-    environment:
-      - VITE_API_URL=http://backend:8001
     volumes:
       - ./app/frontend:/frontend
       - /frontend/node_modules

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { fetchCollections } from "../utils";
+import { fetchCollections, getApiUrl } from "../utils";
 import {
   TextInput,
   Button,
@@ -21,12 +21,23 @@ export default function UploadWorkshop() {
   const [loading, setLoading] = useState(false); // <-- added loading state
 
   useEffect(() => {
+    const abortController = new AbortController();
+    let isMounted = true;
+
     const loadCollections = async () => {
-      const cols = await fetchCollections();
-      setCollections(cols);
-      if (cols.length > 0) setCollectionName(cols[0]);
+      const cols = await fetchCollections(abortController.signal);
+      if (isMounted) {
+        setCollections(cols);
+        if (cols.length > 0) setCollectionName(cols[0]);
+      }
     };
+
     loadCollections();
+
+    return () => {
+      isMounted = false;
+      abortController.abort();
+    };
   }, []);
 
   const updateAttendee = (index, field, value) => {
@@ -56,7 +67,7 @@ export default function UploadWorkshop() {
       return;
     }
 
-    setLoading(true); // <-- start loading
+    setLoading(true);
     setNotification(null);
 
     const formData = new FormData();
@@ -74,12 +85,16 @@ export default function UploadWorkshop() {
       }
     });
 
+    const abortController = new AbortController();
+
     try {
+      const apiUrl = getApiUrl();
       const res = await fetch(
-        "http://141.125.108.191:8001/Upload Workshop Information/",
+        `${apiUrl}/Upload Workshop Information/`,
         {
           method: "POST",
           body: formData,
+          signal: abortController.signal,
         }
       );
 
@@ -95,18 +110,17 @@ export default function UploadWorkshop() {
         subtitle: `Workshop information was added to "${collectionName}".`,
       });
 
-      // Optional UX reset
-      setWorkshopDate("");
-      setMuralUrl("");
       setAttendees([{ name: "", job_title: "", team: "", company: "" }]);
     } catch (err) {
-      console.error("UploadWorkshop failed:", err);
-      setNotification({
-        kind: "error",
-        title: "Upload failed",
-        subtitle:
-          "We couldn’t process the workshop information. Please check the inputs and try again.",
-      });
+      if (err.name !== "AbortError") {
+        console.error("UploadWorkshop failed:", err);
+        setNotification({
+          kind: "error",
+          title: "Upload failed",
+          subtitle:
+            "We couldn't process the workshop information. Please check the inputs and try again.",
+        });
+      }
     } finally {
       setLoading(false); // <-- stop loading
     }

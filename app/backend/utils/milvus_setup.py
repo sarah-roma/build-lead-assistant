@@ -66,23 +66,23 @@ class MilvusSetup:
 
 
     def connect_with_retry(self, retries=30, delay=3):
+        """Attempt to connect to Milvus with retries and delay"""
         last_error = None
         for attempt in range(1, retries + 1):
-            try:
+            try: # Use the connect method from pymilvus to establish a connection
                 connections.connect(
                     host=self.host,
                     port=self.port,
                 )
                 logging.info("Connected to Milvus successfully")
                 return
-            except Exception as e:
+            except Exception as e: # Catch any exception that occurs during connection attempt
                 last_error = e
                 logging.warning(
                     f"Milvus not ready (attempt {attempt}/{retries}), retrying in {delay}s"
                 )
                 time.sleep(delay)
-
-        raise RuntimeError(f"Milvus never became ready: {last_error}")
+        raise RuntimeError(f"Milvus never became ready: {last_error}") # Raise an error if all attempts fail
 
     def connect_to_milvus(self):
         logging.info(f"Connecting to Milvus at {self.host}:{self.port}")

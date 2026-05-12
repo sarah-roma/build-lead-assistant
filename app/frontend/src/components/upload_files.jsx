@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { fetchCollections } from "../utils";
+import { fetchCollections, getApiUrl } from "../utils";
 import {
   Button,
   FileUploader,
@@ -17,12 +17,23 @@ export default function UploadFiles() {
   const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
+    const abortController = new AbortController();
+    let isMounted = true;
+
     const loadCollections = async () => {
-      const cols = await fetchCollections();
-      setCollections(cols);
-      if (cols.length > 0) setCollectionName(cols[0]);
+      const cols = await fetchCollections(abortController.signal);
+      if (isMounted) {
+        setCollections(cols);
+        if (cols.length > 0) setCollectionName(cols[0]);
+      }
     };
+
     loadCollections();
+
+    return () => {
+      isMounted = false;
+      abortController.abort();
+    };
   }, []);
 
   const uploadFiles = async () => {
@@ -42,10 +53,14 @@ export default function UploadFiles() {
     setUploading(true);
     setNotification(null);
 
+    const abortController = new AbortController();
+
     try {
-      const res = await fetch("http://141.125.108.191:8001/Upload Files/", {
+      const apiUrl = getApiUrl();
+      const res = await fetch(`${apiUrl}/Upload Files/`, {
         method: "POST",
         body: formData,
+        signal: abortController.signal,
       });
 
       const data = await res.json();
@@ -63,13 +78,15 @@ export default function UploadFiles() {
       // IMPORTANT: reset uploader state so spinner clears
       setFiles([]);
     } catch (err) {
-      console.error("UploadFiles failed:", err);
-      setNotification({
-        kind: "error",
-        title: "Upload failed",
-        subtitle:
-          "We couldn’t process the selected files. Please check the file types and try again.",
-      });
+      if (err.name !== "AbortError") {
+        console.error("UploadFiles failed:", err);
+        setNotification({
+          kind: "error",
+          title: "Upload failed",
+          subtitle:
+            "We couldn't process the selected files. Please check the file types and try again.",
+        });
+      }
     } finally {
       setUploading(false);
     }

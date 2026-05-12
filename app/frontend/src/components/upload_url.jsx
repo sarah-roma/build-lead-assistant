@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { fetchCollections } from "../utils";
+import { fetchCollections, getApiUrl } from "../utils";
 import {
   TextInput,
   Button,
@@ -17,12 +17,23 @@ export default function UploadURL() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    const abortController = new AbortController();
+    let isMounted = true;
+
     const loadCollections = async () => {
-      const cols = await fetchCollections();
-      setCollections(cols);
-      if (cols.length > 0) setCollectionName(cols[0]);
+      const cols = await fetchCollections(abortController.signal);
+      if (isMounted) {
+        setCollections(cols);
+        if (cols.length > 0) setCollectionName(cols[0]);
+      }
     };
+
     loadCollections();
+
+    return () => {
+      isMounted = false;
+      abortController.abort();
+    };
   }, []);
 
   const uploadURL = async () => {
@@ -48,13 +59,17 @@ export default function UploadURL() {
     formData.append("collection_name", collectionName);
     formData.append("url", url);
 
-    setLoading(true); // <-- start loading
+    setLoading(true);
     setNotification(null);
 
+    const abortController = new AbortController();
+
     try {
-      const res = await fetch("http://141.125.108.191:8001/Upload a URL/", {
+      const apiUrl = getApiUrl();
+      const res = await fetch(`${apiUrl}/Upload a URL/`, {
         method: "POST",
         body: formData,
+        signal: abortController.signal,
       });
 
       const data = await res.json();
@@ -69,15 +84,17 @@ export default function UploadURL() {
         subtitle: data.message,
       });
 
-      setUrl(""); // Optional UX improvement
+      setUrl("");
     } catch (err) {
-      console.error("UploadURL failed:", err);
-      setNotification({
-        kind: "error",
-        title: "Upload failed",
-        subtitle:
-          "We couldn’t ingest the content from this URL. Please check the link and try again.",
-      });
+      if (err.name !== "AbortError") {
+        console.error("UploadURL failed:", err);
+        setNotification({
+          kind: "error",
+          title: "Upload failed",
+          subtitle:
+            "We couldn't ingest the content from this URL. Please check the link and try again.",
+        });
+      }
     } finally {
       setLoading(false); // <-- stop loading
     }

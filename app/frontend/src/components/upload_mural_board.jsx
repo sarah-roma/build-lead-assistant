@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { fetchCollections } from "../utils";
+import { fetchCollections, getApiUrl } from "../utils";
 import {
   TextInput,
   Button,
@@ -9,8 +9,6 @@ import {
   InlineLoading,
 } from "carbon-components-react";
 
-const API_BASE = "http://141.125.108.191:8001";
-
 export default function UploadMuralBoard() {
   const [collections, setCollections] = useState([]);
   const [collectionName, setCollectionName] = useState("");
@@ -19,20 +17,32 @@ export default function UploadMuralBoard() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    const abortController = new AbortController();
+    let isMounted = true;
+
     const loadCollections = async () => {
-      const cols = await fetchCollections();
-      setCollections(cols);
-      if (cols.length > 0) setCollectionName(cols[0]);
+      const cols = await fetchCollections(abortController.signal);
+      if (isMounted) {
+        setCollections(cols);
+        if (cols.length > 0) setCollectionName(cols[0]);
+      }
     };
+
     loadCollections();
+
+    return () => {
+      isMounted = false;
+      abortController.abort();
+    };
   }, []);
 
   /**
    * Single upload attempt
    */
   const attemptUpload = async () => {
+    const apiUrl = getApiUrl();
     const res = await fetch(
-      `${API_BASE}/Upload a Mural Board/?collection_name=${encodeURIComponent(
+      `${apiUrl}/Upload a Mural Board/?collection_name=${encodeURIComponent(
         collectionName
       )}&url=${encodeURIComponent(url)}`
     );
@@ -111,13 +121,15 @@ export default function UploadMuralBoard() {
 
       setUrl("");
     } catch (err) {
-      console.error("UploadMuralBoard failed:", err);
-      setNotification({
-        kind: "error",
-        title: "Upload failed",
-        subtitle:
-          "We couldn’t ingest data from this Mural board. Please try again.",
-      });
+      if (err.name !== "AbortError") {
+        console.error("UploadMuralBoard failed:", err);
+        setNotification({
+          kind: "error",
+          title: "Upload failed",
+          subtitle:
+            "We couldn't ingest data from this Mural board. Please try again.",
+        });
+      }
     } finally {
       setLoading(false);
     }
