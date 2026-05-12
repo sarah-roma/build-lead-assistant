@@ -123,6 +123,29 @@ async def create_collection(collection_name: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.delete("/Delete a Collection/", tags=["info-ingestion"])
+async def delete_collection(collection_name: str):
+    """Drop a Milvus collection. Idempotent — succeeds with a noop if the
+    collection didn't exist, so dev scripts can safely re-run."""
+    try:
+        client = milvus_setup.get_milvus_client()
+        if collection_name not in client.list_collections():
+            logging.info(f"Delete requested for non-existent collection '{collection_name}'")
+            return {
+                "status": "noop",
+                "message": f"Collection '{collection_name}' did not exist; nothing to drop.",
+            }
+        client.drop_collection(collection_name)
+        logging.info(f"Dropped Milvus collection: {collection_name}")
+        return {
+            "status": "success",
+            "message": f"Collection '{collection_name}' dropped.",
+        }
+    except Exception as e:
+        logging.exception("Error occurred while dropping Milvus collection")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 # # Mural authentication
 # @app.get("/Authenticate Mural/", tags=["info-ingestion"])
 # def get_mural_token():

@@ -22,10 +22,56 @@ def test_create_collection(mock_create, mock_get_client):
     mock_create.return_value = {"status": "ok"}
 
     response = client.post("/Create a Collection/?collection_name=test_collection")
-    
+
     assert response.status_code == 200
     assert response.json()["message"] == "Collection 'test_collection' created successfully."
     mock_create.assert_called_once()
+
+
+# Test delete collection — success path
+@patch("main.milvus_setup.get_milvus_client")
+def test_delete_collection_success(mock_get_client):
+    mock_client = MagicMock()
+    mock_client.list_collections.return_value = ["existing_collection"]
+    mock_get_client.return_value = mock_client
+
+    response = client.delete("/Delete a Collection/?collection_name=existing_collection")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["status"] == "success"
+    assert "dropped" in body["message"]
+    mock_client.drop_collection.assert_called_once_with("existing_collection")
+
+
+# Test delete collection — non-existent collection returns noop (idempotent)
+@patch("main.milvus_setup.get_milvus_client")
+def test_delete_collection_not_found_is_noop(mock_get_client):
+    mock_client = MagicMock()
+    mock_client.list_collections.return_value = []
+    mock_get_client.return_value = mock_client
+
+    response = client.delete("/Delete a Collection/?collection_name=missing_collection")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["status"] == "noop"
+    assert "did not exist" in body["message"]
+    mock_client.drop_collection.assert_not_called()
+
+
+# Test delete collection — Milvus error surfaces as 500
+@patch("main.milvus_setup.get_milvus_client")
+def test_delete_collection_milvus_error(mock_get_client):
+    mock_client = MagicMock()
+    mock_client.list_collections.return_value = ["existing_collection"]
+    mock_client.drop_collection.side_effect = Exception("Milvus exploded")
+    mock_get_client.return_value = mock_client
+
+    response = client.delete("/Delete a Collection/?collection_name=existing_collection")
+
+    assert response.status_code == 500
+    assert "Milvus exploded" in response.json()["detail"]
 
 
 def test_upload_mural_requires_auth():
